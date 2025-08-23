@@ -49,18 +49,25 @@ fun RrhhHomeScreen() {
     val contenido: @Composable () -> Unit = {
         when {
             empleadoSeleccionado != null -> {
-                Text("Formulario detalle de: ${empleadoSeleccionado!!.nombre}")
+                EmpleadoDetalleForm(
+                    empleado = empleadoSeleccionado!!,
+                    onCerrar = { handleCerrarDetalle() }
+                )
             }
             else -> {
                 when (opcionSeleccionada) {
-                    "empleados" -> Text("Pantalla: Tabla de Empleados")
-                    "asistencia" -> Text("Pantalla: Gestión Asistencia")
-                    "reportes" -> Text("Pantalla: Gestión Reportes")
-                    "nomina" -> Text("Pantalla: Gestión Nómina")
-                    "permisos" -> Text("Pantalla: Gestión Permisos")
-                    "informes" -> Text("Pantalla: Gestión Informes")
-                    "registrarPersona" -> Text("Pantalla: Registrar Persona")
-                    else -> Text("Menú de Opciones de RRHH")
+                    "empleados" -> EmpleadosTabla(
+                        empleados = empleadosEjemplo,
+                        onEditar = { handleEditar(it) },
+                        onVolver = { opcionSeleccionada = null }
+                    )
+                    "asistencia" -> GestionAsistencia { opcionSeleccionada = null }
+                    "reportes" -> GestionReportes { opcionSeleccionada = null }
+                    "nomina" -> GestionNomina { opcionSeleccionada = null }
+                    "permisos" -> GestionPermisos { opcionSeleccionada = null }
+                    "informes" -> GestionInformes { opcionSeleccionada = null }
+                    "registrarPersona" -> RegistrarPersona { opcionSeleccionada = null }
+                    else -> MenuOpcionesRrhh { seleccion -> opcionSeleccionada = seleccion }
                 }
             }
         }
@@ -78,7 +85,7 @@ fun RrhhHomeScreen() {
     }
 }
 
-// Reusamos el mismo modelo de empleado
+// -------- Modelos --------
 data class Empleado(
     val id: Int,
     val nombre: String,
@@ -90,3 +97,57 @@ data class Empleado(
     val cargo: String,
     val eps: String
 )
+
+// -------- Componentes placeholders --------
+@Composable
+fun MenuOpcionesRrhh(onSeleccionar: (String) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Button(onClick = { onSeleccionar("empleados") }) { Text("Gestión de Empleados") }
+        Button(onClick = { onSeleccionar("asistencia") }) { Text("Gestión de Asistencia") }
+        Button(onClick = { onSeleccionar("reportes") }) { Text("Reportes") }
+        Button(onClick = { onSeleccionar("nomina") }) { Text("Nómina") }
+        Button(onClick = { onSeleccionar("permisos") }) { Text("Permisos") }
+        Button(onClick = { onSeleccionar("informes") }) { Text("Informes") }
+        Button(onClick = { onSeleccionar("registrarPersona") }) { Text("Registrar Persona") }
+    }
+}
+
+@Composable
+fun EmpleadosTabla(empleados: List<Empleado>, onEditar: (Empleado) -> Unit, onVolver: () -> Unit) {
+    Column {
+        empleados.forEach { empleado ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(empleado.nombre)
+                Button(onClick = { onEditar(empleado) }) {
+                    Text("Editar")
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onVolver) { Text("Volver") }
+    }
+}
+
+@Composable
+fun EmpleadoDetalleForm(empleado: Empleado, onCerrar: () -> Unit) {
+    Column {
+        Text("Detalles de ${empleado.nombre}")
+        Spacer(Modifier.height(8.dp))
+        Text("Documento: ${empleado.documento}")
+        Text("Correo: ${empleado.correo}")
+        Text("Cargo: ${empleado.cargo}")
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onCerrar) { Text("Cerrar") }
+    }
+}
+
+// Placeholders de las demás pantallas
+@Composable fun GestionAsistencia(onVolver: () -> Unit) { Text("Pantalla de Asistencia"); Button(onClick = onVolver){ Text("Volver") } }
+@Composable fun GestionReportes(onVolver: () -> Unit) { Text("Pantalla de Reportes"); Button(onClick = onVolver){ Text("Volver") } }
+@Composable fun GestionNomina(onVolver: () -> Unit) { Text("Pantalla de Nómina"); Button(onClick = onVolver){ Text("Volver") } }
+@Composable fun GestionPermisos(onVolver: () -> Unit) { Text("Pantalla de Permisos"); Button(onClick = onVolver){ Text("Volver") } }
+@Composable fun GestionInformes(onVolver: () -> Unit) { Text("Pantalla de Informes"); Button(onClick = onVolver){ Text("Volver") } }
+@Composable fun RegistrarPersona(onVolver: () -> Unit) { Text("Pantalla de Registrar Persona"); Button(onClick = onVolver){ Text("Volver") } }
