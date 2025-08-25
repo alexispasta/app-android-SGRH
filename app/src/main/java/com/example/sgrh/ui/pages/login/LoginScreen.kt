@@ -17,9 +17,16 @@ import com.example.sgrh.R
 fun LoginScreen(
     onLoginSuccess: (rol: String) -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxSize()) {
+    var view by remember { mutableStateOf("login") } // 🔹 Controla la vista
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var recoveryEmail by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
 
-        // Izquierda: logo + texto
+    Row(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // IZQUIERDA - Logo y descripción
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -38,42 +45,119 @@ fun LoginScreen(
             Text("Optimiza el control de tu empresa con nuestra plataforma profesional.", style = MaterialTheme.typography.bodySmall)
         }
 
-        // Derecha: formulario (solo interfaz visual)
+        // DERECHA - Contenido dinámico
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .padding(16.dp),
+                .padding(24.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            OutlinedTextField(
-                value = "",
-                onValueChange = { },
-                label = { Text("Correo Electrónico") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            when (view) {
+                "login" -> {
+                    Text("Ingresar", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    if (error.isNotEmpty()) {
+                        Text(error, color = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-            OutlinedTextField(
-                value = "",
-                onValueChange = { },
-                label = { Text("Contraseña") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth()
-            )
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Correo Electrónico") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔹 Botón que abre directo el selector de roles
-            Button(
-                onClick = { onLoginSuccess("roles") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Iniciar Sesión")
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Contraseña") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            // Aquí siempre redirige al selector de roles
+                            onLoginSuccess("roles")
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Iniciar Sesión")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextButton(onClick = { view = "recuperar" }) {
+                            Text("¿Olvidaste tu contraseña?")
+                        }
+                        TextButton(onClick = { view = "crear" }) {
+                            Text("¿Deseas registrar una empresa?")
+                        }
+                    }
+                }
+
+                "crear" -> {
+                    Text("Registro de Empresa", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Si aún no tienes una empresa registrada en el sistema, puedes hacerlo aquí. El primer usuario creado será el Gerente de la empresa.")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { /* Aquí podrías navegar a registrar empresa */ },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Registrar Empresa")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(onClick = { view = "login" }) {
+                        Text("← Volver")
+                    }
+                }
+
+                "recuperar" -> {
+                    Text("Recuperar contraseña", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = recoveryEmail,
+                        onValueChange = { recoveryEmail = it },
+                        label = { Text("Correo Electrónico") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { /* Aquí enviarías correo de recuperación */ },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Enviar")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(onClick = { view = "login" }) {
+                        Text("← Volver")
+                    }
+                }
             }
         }
     }

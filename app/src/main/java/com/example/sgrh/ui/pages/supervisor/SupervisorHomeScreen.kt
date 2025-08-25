@@ -1,150 +1,107 @@
-// SupervisorHomeScreen.kt
 package com.example.sgrh.ui.pages.supervisor
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.example.sgrh.ui.components.GestionAsistenciaScreen
+import com.example.sgrh.ui.components.GestionNominaScreen
+import com.example.sgrh.ui.components.GestionReportes
+import com.example.sgrh.ui.components.GestionInformes
+import com.example.sgrh.ui.components.GestionPermisos
+import com.example.sgrh.ui.components.MenuOpcionesSupervisor
+import com.example.sgrh.ui.components.EmpleadoReporte
+import com.example.sgrh.ui.components.Reporte
+import com.example.sgrh.ui.components.Informe
+import com.example.sgrh.ui.components.Permiso
 
 @Composable
-fun SupervisorHomeScreen() {
+fun SupervisorHomeScreen(usuarioId: String = "") {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
-    var empleadoSeleccionado by remember { mutableStateOf<Empleado?>(null) }
 
-    val empleadosEjemplo = listOf(
-        Empleado(
-            id = 1,
-            nombre = "Juan Pérez",
-            documento = "123456789",
-            fecha = "2021-03-15",
-            estado = "activo",
-            correo = "juan.perez@email.com",
-            salario = 2500000,
-            cargo = "Analista",
-            eps = "SURA"
+    // -------- Datos de ejemplo empleados (para reportes) --------
+    val empleadosReportesEjemplo = listOf(
+        EmpleadoReporte(
+            _id = "1",
+            nombre = "Juan",
+            apellido = "Pérez",
+            codigo = "SUP001"
         ),
-        Empleado(
-            id = 2,
-            nombre = "María García",
-            documento = "987654321",
-            fecha = "2022-01-10",
-            estado = "inactivo",
-            correo = "maria.garcia@email.com",
-            salario = 3200000,
-            cargo = "Coordinadora",
-            eps = "Nueva EPS"
+        EmpleadoReporte(
+            _id = "2",
+            nombre = "María",
+            apellido = "García",
+            codigo = "SUP002"
         )
     )
 
-    fun handleEditar(empleado: Empleado) {
-        empleadoSeleccionado = empleado
-    }
+    // -------- Datos de ejemplo historial reportes --------
+    val historialReportesEjemplo = listOf(
+        Reporte(
+            _id = "R1",
+            asunto = "Llegada tardía",
+            descripcion = "Empleado llegó 30 min tarde",
+            empleadoId = "1",
+            createdAt = "2025-08-24"
+        )
+    )
 
-    fun handleCerrarDetalle() {
-        empleadoSeleccionado = null
-    }
+    // -------- Datos de ejemplo informes --------
+    val informesEjemplo = listOf(
+        Informe(
+            _id = "I1",
+            nombre = "Informe semanal",
+            descripcion = "Resumen de asistencia semanal",
+            createdAt = "2025-08-20"
+        )
+    )
 
-    val contenido: @Composable () -> Unit = {
-        when {
-            empleadoSeleccionado != null -> {
-                EmpleadoDetalleForm(
-                    empleado = empleadoSeleccionado!!,
-                    onCerrar = { handleCerrarDetalle() }
-                )
-            }
-            else -> {
-                when (opcionSeleccionada) {
-                    "empleados" -> EmpleadosTabla(
-                        empleados = empleadosEjemplo,
-                        onEditar = { handleEditar(it) },
-                        onVolver = { opcionSeleccionada = null }
-                    )
-                    "asistencia" -> GestionAsistencia { opcionSeleccionada = null }
-                    "reportes" -> GestionReportes { opcionSeleccionada = null }
-                    "nomina" -> GestionNomina { opcionSeleccionada = null }
-                    "informes" -> GestionInformes { opcionSeleccionada = null }
-                    "permisos" -> GestionPermisos { opcionSeleccionada = null }
-                    else -> MenuOpcionesSupervisor { seleccion -> opcionSeleccionada = seleccion }
-                }
-            }
-        }
-    }
+    // -------- Datos de ejemplo permisos --------
+    val permisosEjemplo = listOf(
+        Permiso(
+            _id = "P1",
+            empleadoNombre = "Carlos López",
+            motivo = "Cita médica",
+            createdAt = "2025-08-22",
+            estado = "pendiente"
+        )
+    )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Panel de Supervisor", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-        contenido()
-    }
-}
+    when (opcionSeleccionada) {
+        "asistencia" -> GestionAsistenciaScreen(
+            onVolver = { opcionSeleccionada = null }
+        )
 
-// -------- Modelo --------
-data class Empleado(
-    val id: Int,
-    val nombre: String,
-    val documento: String,
-    val fecha: String,
-    val estado: String,
-    val correo: String,
-    val salario: Int,
-    val cargo: String,
-    val eps: String
-)
+        "nomina" -> GestionNominaScreen(
+            onVolver = { opcionSeleccionada = null }
+        )
 
-// -------- Componentes --------
-@Composable
-fun MenuOpcionesSupervisor(onSeleccionar: (String) -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = { onSeleccionar("empleados") }) { Text("Gestión de Empleados") }
-        Button(onClick = { onSeleccionar("asistencia") }) { Text("Gestión de Asistencia") }
-        Button(onClick = { onSeleccionar("reportes") }) { Text("Reportes") }
-        Button(onClick = { onSeleccionar("nomina") }) { Text("Nómina") }
-        Button(onClick = { onSeleccionar("informes") }) { Text("Informes") }
-        Button(onClick = { onSeleccionar("permisos") }) { Text("Permisos") }
-    }
-}
+        "reportes" -> GestionReportes(
+            empleados = empleadosReportesEjemplo,
+            historial = historialReportesEjemplo,
+            onEnviarReporte = { empleadoId, asunto, descripcion ->
+                println("📌 Reporte enviado: $empleadoId - $asunto - $descripcion")
+            },
+            onVolver = { opcionSeleccionada = null }
+        )
 
-@Composable
-fun EmpleadosTabla(empleados: List<Empleado>, onEditar: (Empleado) -> Unit, onVolver: () -> Unit) {
-    Column {
-        empleados.forEach { empleado ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(empleado.nombre)
-                Button(onClick = { onEditar(empleado) }) {
-                    Text("Editar")
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onVolver) { Text("Volver") }
+        "informes" -> GestionInformes(
+            informes = informesEjemplo,
+            onCrearInforme = { nombre, descripcion ->
+                println("📌 Informe creado: $nombre - $descripcion")
+            },
+            onRevisar = { informe ->
+                println("👀 Revisando informe: ${informe._id} - ${informe.nombre}")
+            },
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "permisos" -> GestionPermisos(
+            permisos = permisosEjemplo,
+            onAccion = { id, nuevoEstado ->
+                println("📌 Permiso $id actualizado a $nuevoEstado")
+            },
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        else -> MenuOpcionesSupervisor { seleccion -> opcionSeleccionada = seleccion }
     }
 }
-
-@Composable
-fun EmpleadoDetalleForm(empleado: Empleado, onCerrar: () -> Unit) {
-    Column {
-        Text("Detalles de ${empleado.nombre}")
-        Spacer(Modifier.height(8.dp))
-        Text("Documento: ${empleado.documento}")
-        Text("Correo: ${empleado.correo}")
-        Text("Cargo: ${empleado.cargo}")
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = onCerrar) { Text("Cerrar") }
-    }
-}
-
-// -------- Placeholders --------
-@Composable fun GestionAsistencia(onVolver: () -> Unit) { Text("Pantalla de Asistencia"); Button(onClick = onVolver){ Text("Volver") } }
-@Composable fun GestionReportes(onVolver: () -> Unit) { Text("Pantalla de Reportes"); Button(onClick = onVolver){ Text("Volver") } }
-@Composable fun GestionNomina(onVolver: () -> Unit) { Text("Pantalla de Nómina"); Button(onClick = onVolver){ Text("Volver") } }
-@Composable fun GestionPermisos(onVolver: () -> Unit) { Text("Pantalla de Permisos"); Button(onClick = onVolver){ Text("Volver") } }
-@Composable fun GestionInformes(onVolver: () -> Unit) { Text("Pantalla de Informes"); Button(onClick = onVolver){ Text("Volver") } }

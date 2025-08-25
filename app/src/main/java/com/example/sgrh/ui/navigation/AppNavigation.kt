@@ -4,16 +4,26 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.sgrh.ui.components.BaseLayout
 import com.example.sgrh.ui.pages.login.LoginScreen
 import com.example.sgrh.ui.pages.empleado.EmpleadoHomeScreen
 import com.example.sgrh.ui.pages.gerente.GerenteHomeScreen
 import com.example.sgrh.ui.pages.supervisor.SupervisorHomeScreen
-import com.example.sgrh.ui.pages.Rrhh.RrhhHomeScreen
+import com.example.sgrh.ui.pages.rrhh.RrhhHomeScreen
 import com.example.sgrh.ui.pages.registro.RegistrarEmpresaScreen
 import com.example.sgrh.ui.pages.roles.RolesSelectorScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
+
+    // 🔹 Definimos la acción de logout global
+    val onLogout: () -> Unit = {
+        // Aquí puedes limpiar datos guardados, tokens, etc.
+        navController.navigate("login") {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = "login"
@@ -21,8 +31,6 @@ fun AppNavigation(navController: NavHostController) {
         composable("login") {
             LoginScreen(
                 onLoginSuccess = { rol ->
-                    // Si el rol es "roles" (modo pruebas), abrimos el selector;
-                    // en caso contrario mapeamos al destino correspondiente.
                     if (rol == "roles") {
                         navController.navigate("roles") {
                             popUpTo("login") { inclusive = true }
@@ -51,11 +59,30 @@ fun AppNavigation(navController: NavHostController) {
             RolesSelectorScreen(navController = navController)
         }
 
-        // Pantallas por rol
-        composable("empleadoInicio") { EmpleadoHomeScreen() }
-        composable("gerenteInicio") { GerenteHomeScreen() }
-        composable("supervisorInicio") { SupervisorHomeScreen() }
-        composable("rrhhInicio") { RrhhHomeScreen() }
+        // Pantallas por rol, ahora envueltas en BaseLayout ✅
+        composable("empleadoInicio") {
+            BaseLayout(navController = navController, rol = "empleado", onLogout = onLogout) {
+                EmpleadoHomeScreen()
+            }
+        }
+
+        composable("gerenteInicio") {
+            BaseLayout(navController = navController, rol = "gerente", onLogout = onLogout) {
+                GerenteHomeScreen()
+            }
+        }
+
+        composable("supervisorInicio") {
+            BaseLayout(navController = navController, rol = "supervisor", onLogout = onLogout) {
+                SupervisorHomeScreen()
+            }
+        }
+
+        composable("rrhhInicio") {
+            BaseLayout(navController = navController, rol = "rrhh", onLogout = onLogout) {
+                RrhhHomeScreen()
+            }
+        }
 
         // Otras pantallas
         composable("registrarEmpresa") { RegistrarEmpresaScreen() }

@@ -1,122 +1,138 @@
-// GerenteHomeScreen.kt
 package com.example.sgrh.ui.pages.gerente
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.example.sgrh.ui.components.GestionAsistenciaScreen
+import com.example.sgrh.ui.components.GestionNominaScreen
+import com.example.sgrh.ui.components.GestionReportes
+import com.example.sgrh.ui.components.GestionInformes
+import com.example.sgrh.ui.components.ConfiguracionSistema
+import com.example.sgrh.ui.components.GestionPermisos
+import com.example.sgrh.ui.components.Permiso
+import com.example.sgrh.ui.components.RegistrarPersonaScreen
+import com.example.sgrh.ui.components.EmpleadosTablaScreen
+import com.example.sgrh.ui.components.Empresa
+import com.example.sgrh.ui.components.MenuOpcionesGerente
+import com.example.sgrh.ui.components.EmpleadoReporte   // <- el modelo específico para reportes
+import com.example.sgrh.ui.components.Reporte
+import com.example.sgrh.ui.components.Informe
 
 @Composable
-fun GerenteHomeScreen() {
+fun GerenteHomeScreen(usuarioId: String = "") {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
-    var empleadoSeleccionado by remember { mutableStateOf<Empleado?>(null) }
 
-    // Datos de ejemplo (puedes quitarlos cuando conectes backend)
-    val empleadosEjemplo = listOf(
-        Empleado(
-            id = 1,
-            nombre = "Juan Pérez",
-            documento = "123456789",
-            fecha = "2021-03-15",
-            estado = "activo",
-            correo = "juan.perez@email.com",
-            salario = 2_500_000,
-            cargo = "Analista",
-            eps = "SURA"
+    // -------- Datos de ejemplo empleados (para reportes) --------
+    val empleadosReportesEjemplo = listOf(
+        EmpleadoReporte(
+            _id = "1",
+            nombre = "Juan",
+            apellido = "Pérez",
+            codigo = "EMP001"
         ),
-        Empleado(
-            id = 2,
-            nombre = "María García",
-            documento = "987654321",
-            fecha = "2022-01-10",
-            estado = "inactivo",
-            correo = "maria.garcia@email.com",
-            salario = 3_200_000,
-            cargo = "Coordinadora",
-            eps = "Nueva EPS"
+        EmpleadoReporte(
+            _id = "2",
+            nombre = "María",
+            apellido = "García",
+            codigo = "EMP002"
         )
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Panel Gerente", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
+    // -------- Datos de ejemplo historial reportes --------
+    val historialReportesEjemplo = listOf(
+        Reporte(
+            _id = "R1",
+            asunto = "Falta injustificada",
+            descripcion = "No se presentó el 12/08",
+            empleadoId = "1",
+            createdAt = "2025-08-24"
+        )
+    )
 
-        when {
-            // Placeholder para detalle de empleado
-            empleadoSeleccionado != null -> {
-                Text("Formulario detalle de: ${empleadoSeleccionado!!.nombre}")
-            }
-            else -> {
-                when (opcionSeleccionada) {
-                    "empleados" -> Text("Pantalla: Tabla de Empleados (${empleadosEjemplo.size})")
-                    "asistencia" -> Text("Pantalla: Gestión Asistencia")
-                    "nomina" -> Text("Pantalla: Gestión Nómina")
-                    "reportes" -> Text("Pantalla: Gestión Reportes")
-                    "informes" -> Text("Pantalla: Gestión Informes")
-                    "permisos" -> Text("Pantalla: Gestión Permisos")
-                    "sistema" -> Text("Pantalla: Configuración del Sistema")
-                    "registrarPersona" -> Text("Pantalla: Registrar Persona")
-                    else -> MenuOpcionesGerente { seleccion -> opcionSeleccionada = seleccion }
-                }
-            }
-        }
+    // -------- Datos de ejemplo informes --------
+    val informesEjemplo = listOf(
+        Informe(
+            _id = "I1",
+            nombre = "Informe de desempeño Q1",
+            descripcion = "Resumen del primer trimestre",
+            createdAt = "2025-03-31"
+        ),
+        Informe(
+            _id = "I2",
+            nombre = "Informe de capacitación",
+            descripcion = "Cursos completados por el equipo",
+            createdAt = "2025-06-15"
+        )
+    )
+
+    // -------- Datos de ejemplo permisos --------
+    val permisosEjemplo = listOf(
+        Permiso(
+            _id = "P1",
+            empleadoNombre = "Carlos López",
+            motivo = "Cita médica",
+            createdAt = "2025-08-20",
+            estado = "pendiente"
+        ),
+        Permiso(
+            _id = "P2",
+            empleadoNombre = "Ana Torres",
+            motivo = "Viaje familiar",
+            createdAt = "2025-08-18",
+            estado = "aprobado"
+        )
+    )
+
+    when (opcionSeleccionada) {
+        "empleados" -> EmpleadosTablaScreen(
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "asistencia" -> GestionAsistenciaScreen(
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "nomina" -> GestionNominaScreen(
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "reportes" -> GestionReportes(
+            empleados = empleadosReportesEjemplo,
+            historial = historialReportesEjemplo,
+            onEnviarReporte = { empleadoId, asunto, descripcion ->
+                println("📌 Reporte enviado: $empleadoId - $asunto - $descripcion")
+            },
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "informes" -> GestionInformes(
+            informes = informesEjemplo,
+            onCrearInforme = { nombre, descripcion ->
+                println("📌 Informe creado: $nombre - $descripcion")
+            },
+            onRevisar = { informe ->
+                println("👀 Revisando informe: ${informe._id} - ${informe.nombre}")
+            },
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "permisos" -> GestionPermisos(
+            permisos = permisosEjemplo,
+            onAccion = { id, nuevoEstado ->
+                println("📌 Permiso $id actualizado a $nuevoEstado")
+            },
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "sistema" -> ConfiguracionSistema(
+            empresaInicial = Empresa(),
+            onGuardar = { /* TODO guardar cambios */ },
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        "registrarPersona" -> RegistrarPersonaScreen(
+            onVolver = { opcionSeleccionada = null }
+        )
+
+        else -> MenuOpcionesGerente { seleccion -> opcionSeleccionada = seleccion }
     }
 }
-
-/** Menú de opciones del gerente */
-@Composable
-fun MenuOpcionesGerente(onSeleccionar: (String) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Button(onClick = { onSeleccionar("empleados") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Gestión de Empleados")
-        }
-        Button(onClick = { onSeleccionar("asistencia") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Gestión de Asistencia")
-        }
-        Button(onClick = { onSeleccionar("nomina") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Gestión de Nómina")
-        }
-        Button(onClick = { onSeleccionar("reportes") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Gestión de Reportes")
-        }
-        Button(onClick = { onSeleccionar("informes") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Gestión de Informes")
-        }
-        Button(onClick = { onSeleccionar("permisos") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Gestión de Permisos")
-        }
-        Button(onClick = { onSeleccionar("sistema") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Configuración del Sistema")
-        }
-        Button(onClick = { onSeleccionar("registrarPersona") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Registrar Persona")
-        }
-    }
-}
-
-/** Modelo de datos de empleado (temporal/local) */
-data class Empleado(
-    val id: Int,
-    val nombre: String,
-    val documento: String,
-    val fecha: String,
-    val estado: String,
-    val correo: String,
-    val salario: Int,
-    val cargo: String,
-    val eps: String
-)
