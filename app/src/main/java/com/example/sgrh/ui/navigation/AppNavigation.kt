@@ -12,13 +12,14 @@ import com.example.sgrh.ui.pages.supervisor.SupervisorHomeScreen
 import com.example.sgrh.ui.pages.rrhh.RrhhHomeScreen
 import com.example.sgrh.ui.pages.registro.RegistrarEmpresaScreen
 import com.example.sgrh.ui.pages.roles.RolesSelectorScreen
+import com.example.sgrh.components.QuejasSugerenciasForm
+import com.example.sgrh.ui.components.InformacionCuentaForm // ⚠️ asegúrate que exista
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
 
-    // 🔹 Definimos la acción de logout global
+    // 🔹 Acción de logout global
     val onLogout: () -> Unit = {
-        // Aquí puedes limpiar datos guardados, tokens, etc.
         navController.navigate("login") {
             popUpTo(0) { inclusive = true }
         }
@@ -28,6 +29,7 @@ fun AppNavigation(navController: NavHostController) {
         navController = navController,
         startDestination = "login"
     ) {
+        // Login
         composable("login") {
             LoginScreen(
                 onLoginSuccess = { rol ->
@@ -59,7 +61,7 @@ fun AppNavigation(navController: NavHostController) {
             RolesSelectorScreen(navController = navController)
         }
 
-        // Pantallas por rol, ahora envueltas en BaseLayout ✅
+        // Pantallas por rol envueltas en BaseLayout ✅
         composable("empleadoInicio") {
             BaseLayout(navController = navController, rol = "empleado", onLogout = onLogout) {
                 EmpleadoHomeScreen()
@@ -81,6 +83,28 @@ fun AppNavigation(navController: NavHostController) {
         composable("rrhhInicio") {
             BaseLayout(navController = navController, rol = "rrhh", onLogout = onLogout) {
                 RrhhHomeScreen()
+            }
+        }
+
+        // Pantalla de Quejas y Sugerencias ✅
+        composable("quejas/{rol}") { backStackEntry ->
+            val rol = backStackEntry.arguments?.getString("rol") ?: "empleado"
+            BaseLayout(navController = navController, rol = rol, onLogout = onLogout) {
+                QuejasSugerenciasForm(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        // Pantalla de información de cuenta ✅
+        composable("informacion/{rol}/{usuarioId}") { backStackEntry ->
+            val rol = backStackEntry.arguments?.getString("rol") ?: "empleado"
+            val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
+            BaseLayout(navController = navController, rol = rol, onLogout = onLogout) {
+                InformacionCuentaForm(
+                    usuarioId = usuarioId,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
 

@@ -28,7 +28,7 @@ data class Usuario(
 
 @Composable
 fun InformacionCuentaForm(
-    usuarioId: String?, // ⚠️ pásalo desde tu pantalla de login
+    usuarioId: String, // ⚠️ pásalo desde tu pantalla de login
     onBack: () -> Unit
 ) {
     var usuario by remember { mutableStateOf<Usuario?>(null) }

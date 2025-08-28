@@ -26,23 +26,30 @@ fun LoginScreen(
     Row(
         modifier = Modifier.fillMaxSize()
     ) {
-        // IZQUIERDA - Logo y descripción
+        // IZQUIERDA - Logo y descripción (ARRIBA en lugar de centrado)
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
                 painter = painterResource(id = R.drawable.mi_logo),
                 contentDescription = "Logo",
-                modifier = Modifier.size(200.dp)
+                modifier = Modifier.size(150.dp) // un poco más pequeño para dar espacio
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("SISTEMA DE GESTIÓN DE RECURSOS HUMANOS", style = MaterialTheme.typography.titleMedium)
-            Text("Optimiza el control de tu empresa con nuestra plataforma profesional.", style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                "SISTEMA DE GESTIÓN DE RECURSOS HUMANOS",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "Optimiza el control de tu empresa con nuestra plataforma profesional.",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         // DERECHA - Contenido dinámico
