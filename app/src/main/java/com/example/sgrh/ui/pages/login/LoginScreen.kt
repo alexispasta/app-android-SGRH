@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    navController: NavController, // Ahora pasamos el NavController
+    navController: NavController,
     viewModel: LoginViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -30,9 +30,8 @@ fun LoginScreen(
     var view by remember { mutableStateOf("login") }
     var recoveryEmail by remember { mutableStateOf("") }
 
-    Row(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Row(modifier = Modifier.fillMaxSize()) {
+
         // IZQUIERDA
         Column(
             modifier = Modifier
@@ -166,11 +165,9 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { /* TODO: Navegar a registrar empresa */ },
+                        onClick = { /* TODO */ },
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Registrar Empresa")
-                    }
+                    ) { Text("Registrar Empresa") }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -194,11 +191,9 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { /* TODO: Enviar correo de recuperación */ },
+                        onClick = { /* TODO */ },
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Enviar")
-                    }
+                    ) { Text("Enviar") }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -211,20 +206,14 @@ fun LoginScreen(
     }
 }
 
+// Navegación con rol en minúsculas
 fun navigateByRole(navController: NavController, rol: String) {
-    when (rol) {
-        "Gerente" -> navController.navigate("gerente_screen") {
-            popUpTo("login_screen") { inclusive = true }
-        }
-        "RRHH" -> navController.navigate("rrhh_screen") {
-            popUpTo("login_screen") { inclusive = true }
-        }
-        "Supervisor" -> navController.navigate("supervisor_screen") {
-            popUpTo("login_screen") { inclusive = true }
-        }
-        "Empleado" -> navController.navigate("empleado_screen") {
-            popUpTo("login_screen") { inclusive = true }
-        }
-        else -> { /* no hacer nada o mostrar error */ }
+    println("Navigating for role: $rol") // ✅ log para depuración
+    when (rol.lowercase()) {
+        "gerente" -> navController.navigate("gerenteInicio") { popUpTo("login") { inclusive = true } }
+        "rrhh" -> navController.navigate("rrhhInicio") { popUpTo("login") { inclusive = true } }
+        "supervisor" -> navController.navigate("supervisorInicio") { popUpTo("login") { inclusive = true } }
+        "empleado" -> navController.navigate("empleadoInicio") { popUpTo("login") { inclusive = true } }
+        else -> println("Rol desconocido: $rol")
     }
 }

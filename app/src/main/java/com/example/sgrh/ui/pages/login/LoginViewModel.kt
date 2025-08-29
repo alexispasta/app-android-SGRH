@@ -2,12 +2,13 @@ package com.example.sgrh.ui.pages.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import com.example.sgrh.data.remote.LoginRequest
 import com.example.sgrh.data.remote.LoginResponse
 import com.example.sgrh.data.remote.RetrofitClient
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import retrofit2.Response
 
 class LoginViewModel : ViewModel() {
 
@@ -27,29 +28,42 @@ class LoginViewModel : ViewModel() {
         val password = _uiState.value.password
 
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(loading = true, error = "")
             try {
-                _uiState.value = _uiState.value.copy(loading = true, error = "")
-
-                val response: LoginResponse =
+                val response: Response<LoginResponse> =
                     RetrofitClient.api.login(LoginRequest(email, password))
 
-                if (response.usuario != null) {
-                    // Login exitoso
-                    _uiState.value = _uiState.value.copy(
-                        loading = false,
-                        error = "",
-                        rol = response.usuario?.rol,
-                        userId = response.usuario?._id,
-                        empresaId = response.usuario?.empresaId
-                    )
+                println("Login response code: ${response.code()}")
+                println("Login response body: ${response.body()}") // ✅ debug
 
-                    // Llamamos al callback
-                    response.usuario?.rol?.let { onLoginSuccess(it) }
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.usuario != null) {
+                        println("Login exitoso! Rol: ${body.usuario.rol}")
+                        _uiState.value = _uiState.value.copy(
+                            loading = false,
+                            error = "",
+                            rol = body.usuario.rol,
+                            userId = body.usuario._id,
+                            empresaId = body.usuario.empresaId
+                        )
+                        onLoginSuccess(body.usuario.rol)
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            loading = false,
+                            error = body?.message ?: "Usuario o contraseña incorrecta"
+                        )
+                    }
                 } else {
-                    // Usuario o contraseña incorrecta
+                    val errorMessage = when (response.code()) {
+                        400 -> "Email y contraseña son requeridos"
+                        401 -> "Contraseña incorrecta"
+                        404 -> "Usuario no encontrado"
+                        else -> "Error HTTP: ${response.code()}"
+                    }
                     _uiState.value = _uiState.value.copy(
                         loading = false,
-                        error = "Usuario o contraseña incorrecta"
+                        error = errorMessage
                     )
                 }
 
