@@ -31,29 +31,7 @@ fun AppNavigation(navController: NavHostController) {
     ) {
         // Login
         composable("login") {
-            LoginScreen(
-                onLoginSuccess = { rol ->
-                    if (rol == "roles") {
-                        navController.navigate("roles") {
-                            popUpTo("login") { inclusive = true }
-                            launchSingleTop = true
-                        }
-                        return@LoginScreen
-                    }
-
-                    val destino = when (rol) {
-                        "empleado" -> "empleadoInicio"
-                        "gerente" -> "gerenteInicio"
-                        "supervisor" -> "supervisorInicio"
-                        "rrhh" -> "rrhhInicio"
-                        else -> "empleadoInicio"
-                    }
-                    navController.navigate(destino) {
-                        popUpTo("login") { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
+            LoginScreen(navController = navController)
         }
 
         // Selector de roles
@@ -61,7 +39,7 @@ fun AppNavigation(navController: NavHostController) {
             RolesSelectorScreen(navController = navController)
         }
 
-        // Pantallas por rol envueltas en BaseLayout ✅
+        // Pantallas por rol envueltas en BaseLayout
         composable("empleadoInicio") {
             BaseLayout(navController = navController, rol = "empleado", onLogout = onLogout) {
                 EmpleadoHomeScreen()
@@ -86,7 +64,7 @@ fun AppNavigation(navController: NavHostController) {
             }
         }
 
-        // Pantalla de Quejas y Sugerencias ✅
+        // Pantalla de Quejas y Sugerencias
         composable("quejas/{rol}") { backStackEntry ->
             val rol = backStackEntry.arguments?.getString("rol") ?: "empleado"
             BaseLayout(navController = navController, rol = rol, onLogout = onLogout) {
@@ -96,7 +74,7 @@ fun AppNavigation(navController: NavHostController) {
             }
         }
 
-        // Pantalla de información de cuenta ✅
+        // Pantalla de información de cuenta
         composable("informacion/{rol}/{usuarioId}") { backStackEntry ->
             val rol = backStackEntry.arguments?.getString("rol") ?: "empleado"
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""

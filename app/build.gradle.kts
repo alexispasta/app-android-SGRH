@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.sgrh"
-    compileSdk = 36   // 👈 debe ser 36 para que tus dependencias funcionen
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.sgrh"
@@ -47,6 +47,11 @@ android {
 }
 
 dependencies {
+    // ✅ Retrofit + Gson + OkHttp (corregido)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)     // retrofit-gson → retrofit.gson
+    implementation(libs.okhttp.logging)   // okhttp-logging → okhttp.logging
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
