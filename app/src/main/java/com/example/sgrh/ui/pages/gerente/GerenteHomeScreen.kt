@@ -17,7 +17,11 @@ fun GerenteHomeScreen(
 
 
     when (opcionSeleccionada) {
-        "empleados" -> EmpleadosTablaScreen(onVolver = { opcionSeleccionada = null })
+        "empleados" -> EmpleadosTablaScreen(
+            apiService = RetrofitClient.api,   // 🔹 Necesario
+            empresaId = empresaId,             // 🔹 Necesario
+            onVolver = { opcionSeleccionada = null }
+        )
 
         "asistencia" -> GestionAsistenciaScreen(
             empresaId = empresaId,
@@ -45,13 +49,12 @@ fun GerenteHomeScreen(
         )
 
 
-        "permisos" -> PermisosEmpleadoScreen(
+        "permisos" -> GestionPermisos(
             apiService = RetrofitClient.api,
-            empleadoId = usuarioId,
-            empleadoNombre = "Pedro Sánchez", // o traer de usuario
-            empresaId = empresaId,
+            empresaId = empresaId, // el ID de la empresa del usuario logueado
             onVolver = { opcionSeleccionada = null }
         )
+
 
 
         "sistema" -> ConfiguracionSistema(

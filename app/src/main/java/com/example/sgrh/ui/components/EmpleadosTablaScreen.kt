@@ -1,5 +1,4 @@
-// 📂 ui/pages/gerente/EmpleadosTablaScreen.kt
-package com.example.sgrh.ui.components
+package com.example.sgrh.ui.pages.gerente
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -12,64 +11,57 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.sgrh.data.remote.ApiService
+import com.example.sgrh.data.remote.EmpleadoAsistencia
+import com.example.sgrh.data.remote.Empleado as RemoteEmpleado
+import com.example.sgrh.ui.models.Empleado
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import java.net.HttpURLConnection
-import java.net.URL
 
-// 🔹 Modelo de Empleado
-data class Empleado(
-    val id: String,
-    var nombre: String,
-    var apellido: String,
-    var email: String,
-    var telefono: String,
-    var codigo: String,
-    var rol: String,
-    var ciudad: String,
-    var direccion: String? = "",
-    var fecha: String? = ""
+// 🔹 Mapper de EmpleadoAsistencia → Empleado (UI)
+fun EmpleadoAsistencia.toUI(): Empleado = Empleado(
+    _id = this._id,
+    nombre = this.nombre,
+    apellido = this.apellido,
+    codigo = this.codigo
+)
+
+// 🔹 Mapper de Empleado (UI) → Empleado (Remote)
+fun Empleado.toRemote(empresaId: String): RemoteEmpleado = RemoteEmpleado(
+    _id = this._id,
+    nombre = this.nombre ?: "",
+    apellido = this.apellido ?: "",
+    email = this.email ?: "",
+    telefono = this.telefono,
+    direccion = this.direccion,
+    codigo = this.codigo,
+    rol = this.rol ?: "",
+    fecha = this.fecha,
+    ciudad = this.ciudad,
+    empresaId = empresaId
 )
 
 @Composable
-fun EmpleadosTablaScreen(onVolver: () -> Unit) {
+fun EmpleadosTablaScreen(
+    apiService: ApiService,
+    empresaId: String,
+    onVolver: () -> Unit
+) {
     var empleados by remember { mutableStateOf(listOf<Empleado>()) }
     var empleadoEditando by remember { mutableStateOf<Empleado?>(null) }
-    var mensaje by remember { mutableStateOf<Pair<String, String>?>(null) } // tipo, texto
-
+    var mensaje by remember { mutableStateOf<Pair<String, String>?>(null) }
     val scope = rememberCoroutineScope()
-    val empresaId = "123456" // TODO: reemplazar con empresa del usuario logueado (SharedPreferences o ViewModel)
 
-    // 🔹 Cargar empleados al iniciar
     LaunchedEffect(Unit) {
-        scope.launch {
-            try {
-                val url = URL("http://10.0.2.2:3000/api/personas/empresa/$empresaId")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                val data = conn.inputStream.bufferedReader().readText()
-                val json = JSONArray(data)
-
-                val lista = mutableListOf<Empleado>()
-                for (i in 0 until json.length()) {
-                    val obj = json.getJSONObject(i)
-                    lista.add(
-                        Empleado(
-                            id = obj.getString("_id"),
-                            nombre = obj.getString("nombre"),
-                            apellido = obj.getString("apellido"),
-                            email = obj.getString("email"),
-                            telefono = obj.optString("telefono", ""),
-                            codigo = obj.optString("codigo", ""),
-                            rol = obj.optString("rol", ""),
-                            ciudad = obj.optString("ciudad", "")
-                        )
-                    )
-                }
-                empleados = lista
-            } catch (e: Exception) {
-                mensaje = "error" to (e.message ?: "Error al cargar empleados")
+        try {
+            val response = apiService.getEmpleados(empresaId)
+            if (response.isSuccessful) {
+                val lista = response.body() ?: emptyList<EmpleadoAsistencia>()
+                empleados = lista.map { it.toUI() }
+            } else {
+                mensaje = "error" to "Error al cargar empleados: ${response.code()}"
             }
+        } catch (e: Exception) {
+            mensaje = "error" to (e.message ?: "Error al cargar empleados")
         }
     }
 
@@ -79,10 +71,8 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
             .padding(16.dp)
     ) {
         Text("Gestión de Empleados", style = MaterialTheme.typography.headlineSmall)
-
         Spacer(Modifier.height(12.dp))
 
-        // 🔹 Mensaje de estado
         mensaje?.let { (tipo, texto) ->
             val color = if (tipo == "exito") Color(0xFFDFF2BF) else Color(0xFFFFBABA)
             Box(
@@ -90,13 +80,10 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                     .fillMaxWidth()
                     .background(color)
                     .padding(8.dp)
-            ) {
-                Text(texto)
-            }
+            ) { Text(texto) }
             Spacer(Modifier.height(8.dp))
         }
 
-        // 🔹 Tabla de empleados
         if (empleados.isEmpty()) {
             Text(
                 text = if (empresaId.isNotEmpty()) "No hay empleados" else "Sin empresa asignada",
@@ -112,7 +99,7 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                             .background(Color.DarkGray)
                             .padding(8.dp)
                     ) {
-                        listOf("Nombre", "Apellido", "Email", "Teléfono", "Código", "Rol", "Ciudad", "Acción")
+                        listOf("Nombre", "Apellido", "Código", "Acción")
                             .forEach { header ->
                                 Text(
                                     text = header,
@@ -123,7 +110,6 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                             }
                     }
                 }
-
                 items(empleados) { empleado ->
                     Row(
                         Modifier
@@ -131,23 +117,16 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                             .padding(8.dp)
                     ) {
                         listOf(
-                            empleado.nombre,
-                            empleado.apellido,
-                            empleado.email,
-                            empleado.telefono,
-                            empleado.codigo,
-                            empleado.rol,
-                            empleado.ciudad
+                            empleado.nombre ?: "",
+                            empleado.apellido ?: "",
+                            empleado.codigo ?: ""
                         ).forEach { campo ->
                             Text(campo, modifier = Modifier.weight(1f))
                         }
-
                         Button(
                             onClick = { empleadoEditando = empleado.copy() },
                             modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Editar")
-                        }
+                        ) { Text("Editar") }
                     }
                 }
             }
@@ -155,7 +134,6 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
 
         Spacer(Modifier.height(16.dp))
 
-        // 🔹 Formulario de edición
         empleadoEditando?.let { emp ->
             Column(
                 Modifier
@@ -165,17 +143,10 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                     .padding(12.dp)
             ) {
                 Text("Editando: ${emp.nombre}", fontWeight = FontWeight.Bold)
-
                 listOf(
                     "nombre" to emp.nombre,
                     "apellido" to emp.apellido,
-                    "email" to emp.email,
-                    "telefono" to emp.telefono,
-                    "direccion" to emp.direccion,
-                    "codigo" to emp.codigo,
-                    "rol" to emp.rol,
-                    "fecha" to emp.fecha,
-                    "ciudad" to emp.ciudad
+                    "codigo" to emp.codigo
                 ).forEach { (campo, valor) ->
                     OutlinedTextField(
                         value = valor ?: "",
@@ -183,13 +154,7 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                             empleadoEditando = when (campo) {
                                 "nombre" -> emp.copy(nombre = nuevo)
                                 "apellido" -> emp.copy(apellido = nuevo)
-                                "email" -> emp.copy(email = nuevo)
-                                "telefono" -> emp.copy(telefono = nuevo)
-                                "direccion" -> emp.copy(direccion = nuevo)
                                 "codigo" -> emp.copy(codigo = nuevo)
-                                "rol" -> emp.copy(rol = nuevo)
-                                "fecha" -> emp.copy(fecha = nuevo)
-                                "ciudad" -> emp.copy(ciudad = nuevo)
                                 else -> emp
                             }
                         },
@@ -205,52 +170,13 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                     Button(onClick = {
                         scope.launch {
                             try {
-                                // 🔹 Guardar cambios (PUT)
-                                val url = URL("http://10.0.2.2:3000/api/personas/${emp.id}")
-                                val conn = url.openConnection() as HttpURLConnection
-                                conn.requestMethod = "PUT"
-                                conn.setRequestProperty("Content-Type", "application/json")
-                                conn.doOutput = true
-                                conn.outputStream.write(
-                                    """
-                                    {
-                                        "nombre": "${emp.nombre}",
-                                        "apellido": "${emp.apellido}",
-                                        "email": "${emp.email}",
-                                        "telefono": "${emp.telefono}",
-                                        "direccion": "${emp.direccion}",
-                                        "codigo": "${emp.codigo}",
-                                        "rol": "${emp.rol}",
-                                        "fecha": "${emp.fecha}",
-                                        "ciudad": "${emp.ciudad}"
-                                    }
-                                    """.trimIndent().toByteArray()
-                                )
-
-                                if (conn.responseCode == 200) {
+                                val response = apiService.actualizarEmpleado(emp._id, emp.toRemote(empresaId))
+                                if (response.isSuccessful) {
                                     mensaje = "exito" to "Empleado actualizado correctamente ✅"
                                     empleadoEditando = null
-                                    // 🔹 Recargar lista
-                                    val reload = URL("http://10.0.2.2:3000/api/personas/empresa/$empresaId")
-                                    val data = reload.openStream().bufferedReader().readText()
-                                    val json = JSONArray(data)
-                                    val lista = mutableListOf<Empleado>()
-                                    for (i in 0 until json.length()) {
-                                        val obj = json.getJSONObject(i)
-                                        lista.add(
-                                            Empleado(
-                                                id = obj.getString("_id"),
-                                                nombre = obj.getString("nombre"),
-                                                apellido = obj.getString("apellido"),
-                                                email = obj.getString("email"),
-                                                telefono = obj.optString("telefono", ""),
-                                                codigo = obj.optString("codigo", ""),
-                                                rol = obj.optString("rol", ""),
-                                                ciudad = obj.optString("ciudad", "")
-                                            )
-                                        )
-                                    }
-                                    empleados = lista
+                                    val reload = apiService.getEmpleados(empresaId)
+                                    val lista = reload.body() ?: emptyList<EmpleadoAsistencia>()
+                                    empleados = lista.map { it.toUI() }
                                 } else {
                                     mensaje = "error" to "Error al actualizar empleado"
                                 }
@@ -258,21 +184,18 @@ fun EmpleadosTablaScreen(onVolver: () -> Unit) {
                                 mensaje = "error" to (e.message ?: "Error al guardar")
                             }
                         }
-                    }) {
-                        Text("Guardar")
-                    }
+                    }) { Text("Guardar") }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { empleadoEditando = null }) {
-                        Text("Cancelar")
-                    }
+                    Button(onClick = { empleadoEditando = null }) { Text("Cancelar") }
                 }
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        Button(onClick = onVolver, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
-            Text("← Volver al menú")
-        }
+        Button(
+            onClick = onVolver,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+        ) { Text("← Volver al menú") }
     }
 }

@@ -42,13 +42,12 @@ fun SupervisorHomeScreen(
         )
 
 
-        "permisos" -> PermisosEmpleadoScreen(
+        "permisos" -> GestionPermisos(
             apiService = RetrofitClient.api,
-            empleadoId = usuarioId,
-            empleadoNombre = "Pedro Sánchez", // o traer de usuario
-            empresaId = empresaId,
+            empresaId = empresaId, // el ID de la empresa del usuario logueado
             onVolver = { opcionSeleccionada = null }
         )
+
 
 
         else -> MenuOpcionesSupervisor { seleccion -> opcionSeleccionada = seleccion }

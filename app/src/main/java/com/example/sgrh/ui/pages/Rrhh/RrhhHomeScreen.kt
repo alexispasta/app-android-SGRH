@@ -3,6 +3,8 @@ package com.example.sgrh.ui.pages.rrhh
 import androidx.compose.runtime.*
 import com.example.sgrh.data.remote.RetrofitClient
 import com.example.sgrh.ui.components.*
+import com.example.sgrh.ui.pages.gerente.EmpleadosTablaScreen
+
 
 @Composable
 fun RrhhHomeScreen(
@@ -14,7 +16,12 @@ fun RrhhHomeScreen(
 
 
     when (opcionSeleccionada) {
-        "empleados" -> EmpleadosTablaScreen(onVolver = { opcionSeleccionada = null })
+
+        "empleados" -> EmpleadosTablaScreen(
+            apiService = RetrofitClient.api,   // 🔹 Necesario
+            empresaId = empresaId,             // 🔹 Necesario
+            onVolver = { opcionSeleccionada = null }
+        )
 
         "asistencia" -> GestionAsistenciaScreen(
             empresaId = empresaId,
@@ -42,13 +49,12 @@ fun RrhhHomeScreen(
         )
 
 
-        "permisos" -> PermisosEmpleadoScreen(
+        "permisos" -> GestionPermisos(
             apiService = RetrofitClient.api,
-            empleadoId = usuarioId,
-            empleadoNombre = "Pedro Sánchez", // o traer de usuario
-            empresaId = empresaId,
+            empresaId = empresaId, // el ID de la empresa del usuario logueado
             onVolver = { opcionSeleccionada = null }
         )
+
 
 
         "sistema" -> ConfiguracionSistema(

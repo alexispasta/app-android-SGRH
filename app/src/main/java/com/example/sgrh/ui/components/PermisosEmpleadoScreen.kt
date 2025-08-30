@@ -43,15 +43,13 @@ fun PermisosEmpleadoScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // 🔹 Formulario
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // 🔹 Formulario de solicitud
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             Text("Solicitud de Permiso", style = MaterialTheme.typography.headlineSmall)
@@ -139,44 +137,50 @@ fun PermisosEmpleadoScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // 🔹 Historial (LazyColumn independiente)
-        Text("Historial de Solicitudes", style = MaterialTheme.typography.titleMedium)
+        // 🔹 Historial de permisos del empleado
+        Text(
+            "Historial de Solicitudes",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
         Spacer(Modifier.height(8.dp))
 
-        if (historial.isEmpty()) {
-            Text("No tienes solicitudes registradas", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxHeight()
-            ) {
-                items(historial) { p ->
-                    Card(
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            items(historial) { p ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                ) {
+                    Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text("${p.motivo} - ${p.descripcion ?: ""}")
-                                Text("Fecha: ${p.createdAt}", style = MaterialTheme.typography.bodySmall)
-                            }
-                            val estadoColor = when (p.estado) {
-                                "pendiente" -> MaterialTheme.colorScheme.tertiary
-                                "aprobado" -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.error
-                            }
-                            Text(
-                                text = p.estado,
-                                color = estadoColor,
-                                style = MaterialTheme.typography.labelMedium
-                            )
+                        Column(Modifier.weight(1f)) {
+                            Text("${p.motivo} - ${p.descripcion ?: ""}")
+                            Text("Fecha: ${p.createdAt}", style = MaterialTheme.typography.bodySmall)
                         }
+
+                        val estadoColor = when (p.estado) {
+                            "pendiente" -> MaterialTheme.colorScheme.tertiary
+                            "aprobado" -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.error
+                        }
+
+                        Text(
+                            text = p.estado.uppercase(),
+                            color = estadoColor,
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
             }
         }
     }
 }
+

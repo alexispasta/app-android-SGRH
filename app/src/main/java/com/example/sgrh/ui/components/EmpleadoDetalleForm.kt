@@ -5,7 +5,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.input.KeyboardType
 import com.example.sgrh.ui.models.Empleado
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -15,16 +14,17 @@ fun EmpleadoDetalleForm(
     onCerrar: () -> Unit,
     onGuardar: (Empleado) -> Unit
 ) {
-    // Normalizamos valores nullable a defaults para evitar errores de tipo
-    val idValue = empleado.id
+    // Usamos _id en vez de id
+    val idValue = empleado._id
     var nombre by remember { mutableStateOf(empleado.nombre ?: "") }
     var apellido by remember { mutableStateOf(empleado.apellido ?: "") }
     var fecha by remember { mutableStateOf(empleado.fecha ?: "") }
     var rol by remember { mutableStateOf(empleado.rol ?: "") }
     var email by remember { mutableStateOf(empleado.email ?: "") }
-    var salarioStr by remember { mutableStateOf((empleado.salario ?: 0).toString()) }
-    var cargo by remember { mutableStateOf(empleado.cargo ?: "") }
-    var eps by remember { mutableStateOf(empleado.eps ?: "") }
+    var telefono by remember { mutableStateOf(empleado.telefono ?: "") }
+    var direccion by remember { mutableStateOf(empleado.direccion ?: "") }
+    var codigo by remember { mutableStateOf(empleado.codigo ?: "") }
+    var ciudad by remember { mutableStateOf(empleado.ciudad ?: "") }
 
     Column(
         modifier = Modifier
@@ -53,7 +53,35 @@ fun EmpleadoDetalleForm(
         OutlinedTextField(
             value = apellido,
             onValueChange = { apellido = it },
-            label = { Text("Apellidos / Documento") },
+            label = { Text("Apellido") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = telefono,
+            onValueChange = { telefono = it },
+            label = { Text("Teléfono") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = direccion,
+            onValueChange = { direccion = it },
+            label = { Text("Dirección") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = codigo,
+            onValueChange = { codigo = it },
+            label = { Text("Código") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -64,51 +92,17 @@ fun EmpleadoDetalleForm(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Dropdown para rol/estado (ejemplo simple)
-        var expanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
-        ) {
-            OutlinedTextField(
-                value = rol,
-                onValueChange = { /* read only */ },
-                label = { Text("Rol / Estado") },
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                listOf("activo", "inactivo").forEach { opcion ->
-                    DropdownMenuItem(
-                        text = { Text(opcion) },
-                        onClick = {
-                            rol = opcion
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-
-
         OutlinedTextField(
-            value = cargo,
-            onValueChange = { cargo = it },
-            label = { Text("Cargo") },
+            value = rol,
+            onValueChange = { rol = it },
+            label = { Text("Rol") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = eps,
-            onValueChange = { eps = it },
-            label = { Text("EPS") },
+            value = ciudad,
+            onValueChange = { ciudad = it },
+            label = { Text("Ciudad") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -116,17 +110,16 @@ fun EmpleadoDetalleForm(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
-                val salarioInt = salarioStr.toIntOrNull() ?: (empleado.salario ?: 0)
-
                 val actualizado = empleado.copy(
                     nombre = nombre,
                     apellido = apellido,
+                    email = email,
+                    telefono = telefono,
+                    direccion = direccion,
+                    codigo = codigo,
                     fecha = if (fecha.isBlank()) null else fecha,
                     rol = rol,
-                    email = email,
-                    salario = salarioInt,
-                    cargo = cargo,
-                    eps = eps
+                    ciudad = ciudad
                 )
                 onGuardar(actualizado)
             }) {
@@ -136,13 +129,6 @@ fun EmpleadoDetalleForm(
             OutlinedButton(onClick = onCerrar) {
                 Text("Volver")
             }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { /* abrir file picker */ }) { Text("Cargar documentos") }
-            OutlinedButton(onClick = { /* descargar documentos */ }) { Text("Descargar documentos") }
         }
     }
 }

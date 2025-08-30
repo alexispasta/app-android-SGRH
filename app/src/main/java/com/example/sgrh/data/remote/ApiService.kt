@@ -110,6 +110,20 @@ data class PermisoRequest(
     val empresaId: String
 )
 
+data class Empleado(
+    val _id: String,
+    val nombre: String,
+    val apellido: String,
+    val email: String,
+    val telefono: String?,
+    val direccion: String?,
+    val codigo: String?,
+    val rol: String,
+    val fecha: String?,
+    val ciudad: String?,
+    val empresaId: String
+)
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -166,5 +180,8 @@ interface ApiService {
 
     @GET("/api/permisos/empresa/{empresaId}")
     suspend fun getPermisosPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Permiso>>
+
+    @PUT("/api/personas/{id}")
+    suspend fun actualizarEmpleado(@Path("id") id: String, @Body empleado: Empleado): Response<GenericResponse>
 
 }
