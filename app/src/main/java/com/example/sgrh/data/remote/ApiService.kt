@@ -91,6 +91,25 @@ data class InformeRequest(
     val empresaId: String
 )
 
+data class Permiso(
+    val _id: String,
+    val empleadoId: String,
+    val empleadoNombre: String,
+    val motivo: String,
+    val descripcion: String?,
+    val estado: String,
+    val createdAt: String
+)
+
+data class PermisoRequest(
+    val empleadoId: String,
+    val empleadoNombre: String,
+    val motivo: String,
+    val descripcion: String?,
+    val estado: String = "pendiente",
+    val empresaId: String
+)
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -135,4 +154,17 @@ interface ApiService {
 
     @POST("/api/informes")
     suspend fun crearInforme(@Body request: InformeRequest): Response<Informe>
+
+    @GET("/api/permisos/empleado/{empleadoId}")
+    suspend fun getPermisosPorEmpleado(@Path("empleadoId") empleadoId: String): Response<List<Permiso>>
+
+    @POST("/api/permisos")
+    suspend fun crearPermiso(@Body request: PermisoRequest): Response<GenericResponse>
+
+    @PUT("/api/permisos/{id}")
+    suspend fun actualizarPermiso(@Path("id") id: String, @Body request: Map<String, String>): Response<GenericResponse>
+
+    @GET("/api/permisos/empresa/{empresaId}")
+    suspend fun getPermisosPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Permiso>>
+
 }

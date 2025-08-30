@@ -13,9 +13,7 @@ fun SupervisorHomeScreen(
 
 
 
-    val permisosEjemplo = listOf(
-        Permiso("P1", "Carlos López", "Cita médica", "2025-08-22", "pendiente")
-    )
+
 
     when (opcionSeleccionada) {
         "asistencia" -> GestionAsistenciaScreen(
@@ -44,13 +42,14 @@ fun SupervisorHomeScreen(
         )
 
 
-        "permisos" -> GestionPermisos(
-            permisos = permisosEjemplo,
-            onAccion = { id, nuevoEstado ->
-                println("📌 Permiso $id actualizado a $nuevoEstado")
-            },
+        "permisos" -> PermisosEmpleadoScreen(
+            apiService = RetrofitClient.api,
+            empleadoId = usuarioId,
+            empleadoNombre = "Pedro Sánchez", // o traer de usuario
+            empresaId = empresaId,
             onVolver = { opcionSeleccionada = null }
         )
+
 
         else -> MenuOpcionesSupervisor { seleccion -> opcionSeleccionada = seleccion }
     }

@@ -11,9 +11,7 @@ fun RrhhHomeScreen(
 ) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
-    val permisosEjemplo = listOf(
-        Permiso("P3", "Mario Sánchez", "Vacaciones", "2025-08-10", "pendiente")
-    )
+
 
     when (opcionSeleccionada) {
         "empleados" -> EmpleadosTablaScreen(onVolver = { opcionSeleccionada = null })
@@ -44,13 +42,14 @@ fun RrhhHomeScreen(
         )
 
 
-        "permisos" -> GestionPermisos(
-            permisos = permisosEjemplo,
-            onAccion = { id, nuevoEstado ->
-                println("📌 Permiso $id actualizado a $nuevoEstado")
-            },
+        "permisos" -> PermisosEmpleadoScreen(
+            apiService = RetrofitClient.api,
+            empleadoId = usuarioId,
+            empleadoNombre = "Pedro Sánchez", // o traer de usuario
+            empresaId = empresaId,
             onVolver = { opcionSeleccionada = null }
         )
+
 
         "sistema" -> ConfiguracionSistema(
             empresaInicial = Empresa(),

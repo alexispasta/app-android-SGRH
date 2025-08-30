@@ -10,6 +10,8 @@ import com.example.sgrh.ui.components.InformacionCuentaForm
 import com.example.sgrh.ui.components.PermisosEmpleadoScreen
 import com.example.sgrh.ui.components.RegistroCertificacion
 import com.example.sgrh.ui.components.MenuOpcionesEmpleado
+import com.example.sgrh.data.remote.RetrofitClient
+
 
 @Composable
 fun EmpleadoHomeScreen(
@@ -34,11 +36,14 @@ fun EmpleadoHomeScreen(
                     onBack = { opcionSeleccionada = null }
                 )
             }
-            "permisos" -> {
-                PermisosEmpleadoScreen(
-                    onVolver = { opcionSeleccionada = null }
-                )
-            }
+            "permisos" -> PermisosEmpleadoScreen(
+                apiService = RetrofitClient.api,
+                empleadoId = usuarioId,
+                empleadoNombre = "Pedro Sánchez", // o traer de usuario
+                empresaId = empresaId,
+                onVolver = { opcionSeleccionada = null }
+            )
+
             "certificacion" -> {
                 RegistroCertificacion(
                     onVolver = { opcionSeleccionada = null }

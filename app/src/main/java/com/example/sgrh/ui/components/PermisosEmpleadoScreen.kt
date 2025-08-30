@@ -9,42 +9,37 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.example.sgrh.data.remote.ApiService
+import com.example.sgrh.data.remote.Permiso
+import com.example.sgrh.data.remote.PermisoRequest
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
-// 🔹 Modelo específico para permisos de empleados
-data class PermisoEmpleado(
-    val _id: String,
-    val motivo: String,
-    val descripcion: String,
-    val estado: String,
-    val createdAt: String
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PermisosEmpleadoScreen(
+    apiService: ApiService,
+    empleadoId: String,
+    empleadoNombre: String,
+    empresaId: String,
     onVolver: () -> Unit
 ) {
     var asunto by remember { mutableStateOf("") }
     var razon by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf("") }
-    var historial by remember { mutableStateOf(listOf<PermisoEmpleado>()) }
+    var historial by remember { mutableStateOf<List<Permiso>>(emptyList()) }
 
-    // ⚠️ Aquí deberías leer desde DataStore/SharedPreferences
-    val empleadoId = "1"
-    val empleadoNombre = "Empleado Demo"
-    val empresaId = "1"
+    val scope = rememberCoroutineScope()
 
     // 🔹 Cargar historial al iniciar
-    LaunchedEffect(Unit) {
-        cargarHistorial(empleadoId) { permisos ->
-            historial = permisos
+    LaunchedEffect(empleadoId) {
+        try {
+            val response = apiService.getPermisosPorEmpleado(empleadoId)
+            if (response.isSuccessful) {
+                historial = response.body() ?: emptyList()
+            } else {
+                mensaje = "❌ Error al cargar historial: ${response.code()}"
+            }
+        } catch (e: Exception) {
+            mensaje = "❌ ${e.message}"
         }
     }
 
@@ -52,109 +47,108 @@ fun PermisosEmpleadoScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState())
     ) {
-        Text("Solicitud de Permiso", style = MaterialTheme.typography.headlineSmall)
-
-        Spacer(Modifier.height(12.dp))
-
-        if (mensaje.isNotEmpty()) {
-            Text(
-                text = mensaje,
-                color = if (mensaje.startsWith("✅")) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.error
-            )
-            Spacer(Modifier.height(12.dp))
-        }
-
         // 🔹 Formulario
-        OutlinedTextField(
-            value = asunto,
-            onValueChange = { asunto = it },
-            label = { Text("Asunto del permiso") },
-            placeholder = { Text("Ej. Cita médica") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = razon,
-            onValueChange = { razon = it },
-            label = { Text("Razón del permiso") },
-            placeholder = { Text("Explica la razón detalladamente") },
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-        )
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text("Solicitud de Permiso", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(12.dp))
 
-        Spacer(Modifier.height(12.dp))
-
-        Row(Modifier.fillMaxWidth()) {
-            Button(
-                onClick = {
-                    mensaje = ""
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            val permiso = JSONObject().apply {
-                                put("motivo", asunto)
-                                put("descripcion", razon)
-                                put("estado", "pendiente")
-                                put("empleadoId", empleadoId)
-                                put("empleadoNombre", empleadoNombre)
-                                put("empresaId", empresaId)
-                            }
-
-                            val url = URL("http://10.0.2.2:3000/api/permisos")
-                            val conn = url.openConnection() as HttpURLConnection
-                            conn.requestMethod = "POST"
-                            conn.setRequestProperty("Content-Type", "application/json")
-                            conn.doOutput = true
-
-                            conn.outputStream.use { os ->
-                                os.write(permiso.toString().toByteArray())
-                            }
-
-                            if (conn.responseCode in 200..299) {
-                                asunto = ""
-                                razon = ""
-                                mensaje = "✅ Solicitud enviada correctamente"
-                                cargarHistorial(empleadoId) { permisos ->
-                                    historial = permisos
-                                }
-                            } else {
-                                mensaje = "❌ Error al enviar la solicitud"
-                            }
-                        } catch (e: Exception) {
-                            mensaje = "❌ ${e.message}"
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Enviar solicitud")
+            if (mensaje.isNotEmpty()) {
+                Text(
+                    text = mensaje,
+                    color = if (mensaje.startsWith("✅")) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error
+                )
+                Spacer(Modifier.height(12.dp))
             }
 
-            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = asunto,
+                onValueChange = { asunto = it },
+                label = { Text("Asunto del permiso") },
+                placeholder = { Text("Ej. Cita médica") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            OutlinedButton(
-                onClick = onVolver,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Volver")
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = razon,
+                onValueChange = { razon = it },
+                label = { Text("Razón del permiso") },
+                placeholder = { Text("Explica la razón detalladamente") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        if (asunto.isNotBlank()) {
+                            mensaje = ""
+                            scope.launch {
+                                try {
+                                    val request = PermisoRequest(
+                                        empleadoId = empleadoId,
+                                        empleadoNombre = empleadoNombre,
+                                        motivo = asunto,
+                                        descripcion = razon,
+                                        empresaId = empresaId
+                                    )
+                                    val response = apiService.crearPermiso(request)
+                                    if (response.isSuccessful) {
+                                        mensaje = "✅ Solicitud enviada correctamente"
+                                        asunto = ""
+                                        razon = ""
+                                        // Recargar historial
+                                        val respHistorial = apiService.getPermisosPorEmpleado(empleadoId)
+                                        historial = respHistorial.body() ?: emptyList()
+                                    } else {
+                                        mensaje = "❌ Error al enviar la solicitud: ${response.code()}"
+                                    }
+                                } catch (e: Exception) {
+                                    mensaje = "❌ ${e.message}"
+                                }
+                            }
+                        } else {
+                            mensaje = "❌ El asunto es obligatorio"
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Enviar solicitud")
+                }
+
+                Spacer(Modifier.width(8.dp))
+
+                OutlinedButton(
+                    onClick = onVolver,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Volver")
+                }
             }
         }
 
         Spacer(Modifier.height(20.dp))
 
-        // 🔹 Historial
+        // 🔹 Historial (LazyColumn independiente)
         Text("Historial de Solicitudes", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
 
         if (historial.isEmpty()) {
             Text("No tienes solicitudes registradas", color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier.fillMaxHeight()
+            ) {
                 items(historial) { p ->
                     Card(
                         modifier = Modifier
@@ -166,7 +160,7 @@ fun PermisosEmpleadoScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text("${p.motivo} - ${p.descripcion}")
+                                Text("${p.motivo} - ${p.descripcion ?: ""}")
                                 Text("Fecha: ${p.createdAt}", style = MaterialTheme.typography.bodySmall)
                             }
                             val estadoColor = when (p.estado) {
@@ -183,36 +177,6 @@ fun PermisosEmpleadoScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-// 🔹 Función para cargar historial desde API
-fun cargarHistorial(empleadoId: String, onResult: (List<PermisoEmpleado>) -> Unit) {
-    CoroutineScope(Dispatchers.IO).launch {
-        try {
-            val url = URL("http://10.0.2.2:3000/api/permisos/empleado/$empleadoId")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            val response = conn.inputStream.bufferedReader().readText()
-            val arr = JSONArray(response)
-
-            val lista = mutableListOf<PermisoEmpleado>()
-            for (i in 0 until arr.length()) {
-                val obj = arr.getJSONObject(i)
-                lista.add(
-                    PermisoEmpleado(
-                        _id = obj.getString("_id"),
-                        motivo = obj.getString("motivo"),
-                        descripcion = obj.getString("descripcion"),
-                        estado = obj.getString("estado"),
-                        createdAt = obj.getString("createdAt")
-                    )
-                )
-            }
-            onResult(lista)
-        } catch (e: Exception) {
-            onResult(emptyList())
         }
     }
 }
