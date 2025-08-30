@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.sgrh.R
+import com.example.sgrh.ui.navigation.navigateByRole
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,7 +32,6 @@ fun LoginScreen(
     var recoveryEmail by remember { mutableStateOf("") }
 
     Row(modifier = Modifier.fillMaxSize()) {
-
         // IZQUIERDA
         Column(
             modifier = Modifier
@@ -165,7 +165,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { /* TODO */ },
+                        onClick = { /* TODO: lógica registro */ },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Registrar Empresa") }
 
@@ -191,7 +191,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { /* TODO */ },
+                        onClick = { /* TODO: lógica recuperación */ },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Enviar") }
 
@@ -205,22 +205,3 @@ fun LoginScreen(
         }
     }
 }
-
-// Navegación con parámetros reales
-fun navigateByRole(navController: NavController, rol: String, userId: String?, empresaId: String?) {
-    when (rol.lowercase()) { // ✅ normalizamos
-        "gerente" -> navController.navigate("gerenteInicio/${userId ?: ""}/${empresaId ?: ""}") {
-            popUpTo("login") { inclusive = true }
-        }
-        "rrhh" -> navController.navigate("rrhhInicio/${userId ?: ""}/${empresaId ?: ""}") {
-            popUpTo("login") { inclusive = true }
-        }
-        "supervisor" -> navController.navigate("supervisorInicio/${userId ?: ""}/${empresaId ?: ""}") {
-            popUpTo("login") { inclusive = true }
-        }
-        "empleado" -> navController.navigate("empleadoInicio") {
-            popUpTo("login") { inclusive = true }
-        }
-    }
-}
-

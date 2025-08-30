@@ -41,15 +41,16 @@ interface ApiService {
     @GET("/api/personas/empresa/{empresaId}")
     suspend fun getEmpleados(@Path("empresaId") empresaId: String): Response<List<EmpleadoAsistencia>>
 
-    @GET("/api/gerente/asistencia/historial/{empresaId}")
+    @GET("/api/asistencia/historial/{empresaId}")
     suspend fun getHistorial(@Path("empresaId") empresaId: String): Response<List<String>>
 
-    @GET("/api/gerente/asistencia/{empresaId}/{fecha}")
+    @GET("/api/asistencia/{empresaId}/{fecha}")
     suspend fun getAsistenciaPorFecha(
         @Path("empresaId") empresaId: String,
         @Path("fecha") fecha: String
     ): Response<List<AsistenciaRequest>>
 
-    @POST("/api/gerente/asistencia")
+    @POST("/api/asistencia")
     suspend fun guardarAsistencia(@Body registros: List<AsistenciaRequest>): Response<GenericResponse>
+
 }

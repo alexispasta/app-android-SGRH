@@ -9,14 +9,23 @@ import androidx.navigation.compose.rememberNavController
 import com.example.sgrh.ui.navigation.AppNavigation
 import com.example.sgrh.ui.theme.SGRHTheme
 
-class   MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             SGRHTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     val navController = rememberNavController()
-                    AppNavigation(navController = navController)
+
+                    AppNavigation(
+                        navController = navController,
+                        onLogout = {
+                            // 👇 Al cerrar sesión volvemos al login
+                            navController.navigate("login") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    )
                 }
             }
         }

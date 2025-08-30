@@ -9,10 +9,13 @@ import androidx.compose.ui.unit.dp
 import com.example.sgrh.ui.components.InformacionCuentaForm
 import com.example.sgrh.ui.components.PermisosEmpleadoScreen
 import com.example.sgrh.ui.components.RegistroCertificacion
-import com.example.sgrh.ui.components.MenuOpcionesEmpleado   // ✅ usamos el componente modular
+import com.example.sgrh.ui.components.MenuOpcionesEmpleado
 
 @Composable
-fun EmpleadoHomeScreen(usuarioId: String = "") {   // 👈 recibe el id del usuario logueado
+fun EmpleadoHomeScreen(
+    usuarioId: String = "",
+    empresaId: String = ""   // ✅ ahora también recibe empresaId
+) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -26,17 +29,20 @@ fun EmpleadoHomeScreen(usuarioId: String = "") {   // 👈 recibe el id del usua
 
         when (opcionSeleccionada) {
             "consultar" -> {
-                // ✅ ahora sí pasamos el id
                 InformacionCuentaForm(
                     usuarioId = usuarioId,
                     onBack = { opcionSeleccionada = null }
                 )
             }
             "permisos" -> {
-                PermisosEmpleadoScreen(onVolver = { opcionSeleccionada = null })
+                PermisosEmpleadoScreen(
+                    onVolver = { opcionSeleccionada = null }
+                )
             }
             "certificacion" -> {
-                RegistroCertificacion(onVolver = { opcionSeleccionada = null })
+                RegistroCertificacion(
+                    onVolver = { opcionSeleccionada = null }
+                )
             }
             else -> {
                 MenuOpcionesEmpleado { seleccion -> opcionSeleccionada = seleccion }
@@ -44,4 +50,3 @@ fun EmpleadoHomeScreen(usuarioId: String = "") {   // 👈 recibe el id del usua
         }
     }
 }
-
