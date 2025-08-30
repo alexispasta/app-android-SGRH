@@ -58,8 +58,8 @@ fun RrhhHomeScreen(
 
 
         "sistema" -> ConfiguracionSistema(
-            empresaInicial = Empresa(),
-            onGuardar = { /* TODO */ },
+            empresaId = empresaId,           // ✅ Usamos el ID de la empresa que ya llega como parámetro
+            apiService = RetrofitClient.api, // ✅ Tu instancia de ApiService
             onVolver = { opcionSeleccionada = null }
         )
 

@@ -124,6 +124,15 @@ data class Empleado(
     val empresaId: String
 )
 
+data class Empresa(
+    var nombre: String = "",
+    var pais: String = "",
+    var correo: String = "",
+    var ciudad: String = "",
+    var telefono: String = "",
+    var direccion: String = ""
+)
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -183,5 +192,14 @@ interface ApiService {
 
     @PUT("/api/personas/{id}")
     suspend fun actualizarEmpleado(@Path("id") id: String, @Body empleado: Empleado): Response<GenericResponse>
+
+    @GET("/api/empresas/{id}")
+    suspend fun getEmpresaById(@Path("id") empresaId: String): Response<Empresa>
+
+    @PUT("/api/empresas/{id}")
+    suspend fun actualizarEmpresa(
+        @Path("id") empresaId: String,
+        @Body empresa: Empresa
+    ): Response<GenericResponse>
 
 }

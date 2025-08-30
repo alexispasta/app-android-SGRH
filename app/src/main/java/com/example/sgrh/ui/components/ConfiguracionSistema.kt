@@ -1,50 +1,56 @@
-// 📂 ui/components/ConfiguracionSistema.kt
 package com.example.sgrh.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions   // ✅ import correcto
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-
-// Modelo de datos de empresa
-data class Empresa(
-    var nombre: String = "",
-    var pais: String = "",
-    var correo: String = "",
-    var ciudad: String = "",
-    var telefono: String = "",
-    var direccion: String = ""
-)
+import com.example.sgrh.data.remote.ApiService
+import com.example.sgrh.data.remote.Empresa
+import kotlinx.coroutines.launch
 
 @Composable
 fun ConfiguracionSistema(
-    empresaInicial: Empresa,
-    onGuardar: (Empresa) -> Unit,
+    empresaId: String,
+    apiService: ApiService,
     onVolver: () -> Unit
 ) {
-    var empresa by remember { mutableStateOf(empresaInicial) }
+    var empresa by remember { mutableStateOf(Empresa()) }
     var mensaje by remember { mutableStateOf<Pair<String, String>?>(null) }
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+
+    // 🔹 Cargar datos de la empresa al iniciar
+    LaunchedEffect(empresaId) {
+        try {
+            val response = apiService.getEmpresaById(empresaId)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    empresa = it
+                }
+            } else {
+                mensaje = "error" to "No se pudo cargar la empresa"
+            }
+        } catch (e: Exception) {
+            mensaje = "error" to "Error al conectar con el servidor"
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(scrollState)
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = "Configuración del Sistema",
-            style = MaterialTheme.typography.headlineSmall
-        )
+        Text("Configuración del Sistema", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campos editables
         val campos = listOf(
             "nombre" to "Nombre",
             "pais" to "País",
@@ -92,18 +98,24 @@ fun ConfiguracionSistema(
                 keyboardOptions = keyboardOpts,
                 maxLines = if (clave == "direccion") 4 else 1
             )
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botón Guardar
         Button(
             onClick = {
-                if (empresa.nombre.isNotBlank() && empresa.correo.isNotBlank()) {
-                    onGuardar(empresa)
-                    mensaje = "exito" to "Cambios guardados correctamente"
-                } else {
-                    mensaje = "error" to "Debes completar al menos Nombre y Correo"
+                scope.launch {
+                    try {
+                        val response = apiService.actualizarEmpresa(empresaId, empresa)
+                        if (response.isSuccessful) {
+                            mensaje = "exito" to "Cambios guardados correctamente"
+                        } else {
+                            mensaje = "error" to "Error al guardar cambios"
+                        }
+                    } catch (e: Exception) {
+                        mensaje = "error" to "Error al conectar con el servidor"
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -113,7 +125,6 @@ fun ConfiguracionSistema(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Mostrar mensaje
         mensaje?.let { (tipo, texto) ->
             Text(
                 text = texto,
@@ -125,10 +136,7 @@ fun ConfiguracionSistema(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedButton(
-            onClick = onVolver,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        OutlinedButton(onClick = onVolver, modifier = Modifier.fillMaxWidth()) {
             Text("← Volver al Menú")
         }
     }

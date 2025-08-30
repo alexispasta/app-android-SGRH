@@ -58,10 +58,12 @@ fun GerenteHomeScreen(
 
 
         "sistema" -> ConfiguracionSistema(
-            empresaInicial = Empresa(),
-            onGuardar = { /* TODO guardar cambios */ },
+            empresaId = empresaId,           // ✅ Usamos el ID de la empresa que ya llega como parámetro
+            apiService = RetrofitClient.api, // ✅ Tu instancia de ApiService
             onVolver = { opcionSeleccionada = null }
         )
+
+
 
         "registrarPersona" -> RegistrarPersonaScreen(onVolver = { opcionSeleccionada = null })
 
