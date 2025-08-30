@@ -1,24 +1,29 @@
-// 📂 ui/pages/registro/RegistrarPersonaScreen.kt
 package com.example.sgrh.ui.components
 
+import android.app.DatePickerDialog
+import android.widget.DatePicker
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.example.sgrh.data.remote.ApiService
+import com.example.sgrh.data.remote.RegistroPersona
 import kotlinx.coroutines.launch
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class) // ✅ Optamos por usar APIs experimentales de Material3
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrarPersonaScreen(
+    apiService: ApiService,
+    empresaId: String,
     onVolver: () -> Unit
 ) {
     var nombre by remember { mutableStateOf("") }
@@ -30,10 +35,11 @@ fun RegistrarPersonaScreen(
     var rol by remember { mutableStateOf("") }
     var fechaNacimiento by remember { mutableStateOf("") }
     var ciudad by remember { mutableStateOf("") }
-
     var mensaje by remember { mutableStateOf("") }
 
     val scroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -41,76 +47,38 @@ fun RegistrarPersonaScreen(
             .padding(16.dp)
             .verticalScroll(scroll)
     ) {
-        Text(
-            text = "Registrar Persona",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
+        Text("Registrar Persona", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = nombre,
-            onValueChange = { nombre = it },
-            label = { Text("Nombres") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        val textFieldModifier = Modifier.fillMaxWidth()
 
-        OutlinedTextField(
-            value = apellido,
-            onValueChange = { apellido = it },
-            label = { Text("Apellidos") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Campos de texto
+        OutlinedTextField(nombre, onValueChange = { nombre = it }, label = { Text("Nombres") }, modifier = textFieldModifier)
+        OutlinedTextField(apellido, onValueChange = { apellido = it }, label = { Text("Apellidos") }, modifier = textFieldModifier)
+        OutlinedTextField(email, onValueChange = { email = it }, label = { Text("Correo Electrónico") }, modifier = textFieldModifier)
+        OutlinedTextField(password, onValueChange = { password = it }, label = { Text("Contraseña") }, modifier = textFieldModifier)
+        OutlinedTextField(telefono, onValueChange = { telefono = it }, label = { Text("Teléfono") }, modifier = textFieldModifier)
+        OutlinedTextField(direccion, onValueChange = { direccion = it }, label = { Text("Dirección") }, modifier = textFieldModifier)
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Correo Electrónico") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Spacer(Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = telefono,
-            onValueChange = { telefono = it },
-            label = { Text("Teléfono") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = direccion,
-            onValueChange = { direccion = it },
-            label = { Text("Dirección") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Selector de rol (API experimental de Material3)
+        // Dropdown para rol
         var expanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
             OutlinedTextField(
                 value = rol,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Rol de Empresa") },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = textFieldModifier.menuAnchor()
             )
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                listOf("empleado", "rrhh", "gerente", "supervisor").forEach {
+                listOf("empleado", "rrhh", "gerente", "supervisor").forEach { item ->
                     DropdownMenuItem(
-                        text = { Text(it.replaceFirstChar { c -> c.uppercase() }) },
+                        text = { Text(item.replaceFirstChar { it.uppercase() }) },
                         onClick = {
-                            rol = it
+                            rol = item
                             expanded = false
                         }
                     )
@@ -118,69 +86,88 @@ fun RegistrarPersonaScreen(
             }
         }
 
-        OutlinedTextField(
-            value = fechaNacimiento,
-            onValueChange = { fechaNacimiento = it },
-            label = { Text("Fecha de Nacimiento (YYYY-MM-DD)") },
-            modifier = Modifier.fillMaxWidth()
+        Spacer(Modifier.height(12.dp))
+
+        // Selector de fecha de nacimiento corregido
+        val calendar = Calendar.getInstance()
+        val datePickerDialog = DatePickerDialog(
+            context,
+            { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+                fechaNacimiento = "%04d-%02d-%02d".format(year, month + 1, dayOfMonth)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
         )
 
         OutlinedTextField(
-            value = ciudad,
-            onValueChange = { ciudad = it },
-            label = { Text("Ciudad") },
-            modifier = Modifier.fillMaxWidth()
+            value = fechaNacimiento,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Fecha de Nacimiento") },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = "Seleccionar fecha",
+                    modifier = Modifier.clickable { datePickerDialog.show() } // ícono clickeable
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { datePickerDialog.show() } // todo el campo clickeable
         )
+
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedTextField(ciudad, onValueChange = { ciudad = it }, label = { Text("Ciudad") }, modifier = textFieldModifier)
 
         Spacer(Modifier.height(16.dp))
 
-        // Botón registrar
+        // Botón de registrar
         Button(
             onClick = {
                 mensaje = ""
-                val persona = mapOf(
-                    "nombre" to nombre,
-                    "apellido" to apellido,
-                    "email" to email,
-                    "password" to password,
-                    "telefono" to telefono,
-                    "direccion" to direccion,
-                    "rol" to rol,
-                    "fechaNacimiento" to fechaNacimiento,
-                    "ciudad" to ciudad,
-                    "empresaId" to "1" // ⚠️ Aquí deberías traer el empresaId guardado en SharedPreferences o tu sesión
+                val nuevaPersona = RegistroPersona(
+                    nombre = nombre,
+                    apellido = apellido,
+                    email = email,
+                    password = password,
+                    telefono = if (telefono.isEmpty()) null else telefono,
+                    direccion = if (direccion.isEmpty()) null else direccion,
+                    codigo = "",
+                    rol = rol,
+                    fecha = fechaNacimiento,
+                    ciudad = if (ciudad.isEmpty()) null else ciudad,
+                    empresaId = empresaId
                 )
 
-                CoroutineScope(Dispatchers.IO).launch {
+
+
+                scope.launch {
                     try {
-                        val url = URL("http://10.0.2.2:3000/api/personas") // localhost para Android
-                        val conn = url.openConnection() as HttpURLConnection
-                        conn.requestMethod = "POST"
-                        conn.setRequestProperty("Content-Type", "application/json")
-                        conn.doOutput = true
-
-                        val body = buildJson(persona)
-                        conn.outputStream.use { os ->
-                            os.write(body.toByteArray())
-                        }
-
-                        if (conn.responseCode == 200 || conn.responseCode == 201) {
-                            mensaje = "✅ Persona registrada correctamente"
-                            // limpiar campos
-                            nombre = ""; apellido = ""; email = ""; password = ""
-                            telefono = ""; direccion = ""; rol = ""; fechaNacimiento = ""; ciudad = ""
-                        } else {
-                            mensaje = "❌ Error al registrar persona"
-                        }
+                        // ✅ Aquí pasamos la variable, no la clase
+                        val response = apiService.crearEmpleado(nuevaPersona)
+                        mensaje = if (response.isSuccessful) {
+                            // Limpiar campos
+                            nombre = ""
+                            apellido = ""
+                            email = ""
+                            password = ""
+                            telefono = ""
+                            direccion = ""
+                            rol = ""
+                            fechaNacimiento = ""
+                            ciudad = ""
+                            "✅ Persona registrada correctamente"
+                        } else "❌ Error al registrar persona"
                     } catch (e: Exception) {
                         mensaje = "❌ ${e.message}"
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Registrar Persona")
-        }
+        ) { Text("Registrar Persona") }
+
 
         Spacer(Modifier.height(12.dp))
 
@@ -194,18 +181,8 @@ fun RegistrarPersonaScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        OutlinedButton(
-            onClick = onVolver,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        OutlinedButton(onClick = onVolver, modifier = Modifier.fillMaxWidth()) {
             Text("← Volver al Menú")
         }
-    }
-}
-
-// 🔹 Función helper para crear JSON sin librerías externas
-fun buildJson(data: Map<String, String>): String {
-    return data.entries.joinToString(prefix = "{", postfix = "}") {
-        "\"${it.key}\":\"${it.value}\""
     }
 }

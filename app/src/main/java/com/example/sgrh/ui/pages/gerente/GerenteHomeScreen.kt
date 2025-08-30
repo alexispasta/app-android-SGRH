@@ -65,8 +65,13 @@ fun GerenteHomeScreen(
 
 
 
-        "registrarPersona" -> RegistrarPersonaScreen(onVolver = { opcionSeleccionada = null })
+        "registrarPersona" -> RegistrarPersonaScreen(
+            apiService = RetrofitClient.api, // 🔹 Instancia de ApiService
+            empresaId = empresaId,            // 🔹 ID de la empresa del gerente
+            onVolver = { opcionSeleccionada = null }
+        )
 
         else -> MenuOpcionesGerente { seleccion -> opcionSeleccionada = seleccion }
+
     }
 }

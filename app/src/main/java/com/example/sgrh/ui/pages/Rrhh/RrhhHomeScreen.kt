@@ -63,8 +63,13 @@ fun RrhhHomeScreen(
             onVolver = { opcionSeleccionada = null }
         )
 
-        "registrarPersona" -> RegistrarPersonaScreen(onVolver = { opcionSeleccionada = null })
+        "registrarPersona" -> RegistrarPersonaScreen(
+            apiService = RetrofitClient.api, // 🔹 Instancia de ApiService
+            empresaId = empresaId,            // 🔹 ID de la empresa del gerente
+            onVolver = { opcionSeleccionada = null }
+        )
 
-        else -> MenuOpcionesRrhh { seleccion -> opcionSeleccionada = seleccion }
+        else -> MenuOpcionesGerente { seleccion -> opcionSeleccionada = seleccion }
+
     }
 }

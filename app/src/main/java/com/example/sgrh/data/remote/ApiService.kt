@@ -202,4 +202,8 @@ interface ApiService {
         @Body empresa: Empresa
     ): Response<GenericResponse>
 
+    @POST("/api/personas")
+    suspend fun crearEmpleado(@Body persona: RegistroPersona): Response<GenericResponse>
+
+
 }
