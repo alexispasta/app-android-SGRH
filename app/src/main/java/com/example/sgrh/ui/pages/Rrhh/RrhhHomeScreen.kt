@@ -34,7 +34,11 @@ fun RrhhHomeScreen(
             empresaId = empresaId,
             onVolver = { opcionSeleccionada = null }
         )
-        "nomina" -> GestionNominaScreen(onVolver = { opcionSeleccionada = null })
+        "nomina" -> GestionNominaScreen(
+            onVolver = { opcionSeleccionada = null },
+            empresaId = empresaId // 🔹 PASAMOS empresaId
+        )
+
         "reportes" -> GestionReportes(
             empleados = empleadosReportesEjemplo,
             historial = historialReportesEjemplo,

@@ -75,8 +75,10 @@ fun SupervisorHomeScreen(
         )
 
         "nomina" -> GestionNominaScreen(
-            onVolver = { opcionSeleccionada = null }
+            onVolver = { opcionSeleccionada = null },
+            empresaId = empresaId // 🔹 PASAMOS empresaId
         )
+
 
         "reportes" -> GestionReportes(
             empleados = empleadosReportesEjemplo,

@@ -14,7 +14,7 @@ data class Usuario(
 data class LoginResponse(
     val usuario: Usuario?,
     val message: String?,
-    val error: String? // ✅ añadido para manejar errores del backend
+    val error: String?
 )
 
 data class EmpleadoAsistencia(
@@ -33,6 +33,27 @@ data class AsistenciaRequest(
 )
 
 data class GenericResponse(val message: String)
+
+// 🔹 Modelos de Nómina
+data class EmpleadoNomina(
+    val _id: String,
+    val nombre: String,
+    val apellido: String,
+    val codigo: String
+)
+
+data class Nomina(
+    val _id: String? = null,
+    val nombre: String,
+    val cedula: String,
+    val cuenta: String,
+    val salario: Double,
+    val auxilio: Double,
+    val horasExtra: Double,
+    val bonificacion: Double,
+    val descuentos: Double,
+    val empresaId: String
+)
 
 interface ApiService {
     @POST("/api/login")
@@ -53,4 +74,16 @@ interface ApiService {
     @POST("/api/asistencia")
     suspend fun guardarAsistencia(@Body registros: List<AsistenciaRequest>): Response<GenericResponse>
 
+    // 🔹 Endpoints de Nómina
+    @GET("/api/nomina/empresa/{empresaId}")
+    suspend fun getNominas(@Path("empresaId") empresaId: String): Response<List<Nomina>>
+
+    @POST("/api/nomina")
+    suspend fun crearNomina(@Body nomina: Nomina): Response<Nomina>
+
+    @PUT("/api/nomina/{id}")
+    suspend fun actualizarNomina(@Path("id") id: String, @Body nomina: Nomina): Response<Nomina>
+
+    @DELETE("/api/nomina/{id}")
+    suspend fun eliminarNomina(@Path("id") id: String): Response<GenericResponse>
 }
