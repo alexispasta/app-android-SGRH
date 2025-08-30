@@ -1,5 +1,4 @@
-// 📂 ui/pages/usuario/ConsultarInformacionScreen.kt
-package com.example.sgrh.ui.pages.usuario
+package com.example.sgrh.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.sgrh.ui.models.Empleado
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,33 +15,20 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class Usuario(
-    var nombre: String = "",
-    var apellido: String = "",
-    var email: String = "",
-    var telefono: String = "",
-    var direccion: String = "",
-    var ciudad: String = "",
-    var fecha: String = "",
-    var rol: String = "",
-    var codigo: String = ""
-)
-
 @Composable
 fun ConsultarInformacionScreen(
     onVolver: () -> Unit,
-    usuarioId: String = "1" // ⚠️ aquí debería venir de DataStore/SharedPreferences
+    usuarioId: String = "1"
 ) {
-    var usuario by remember { mutableStateOf<Usuario?>(null) }
+    var empleado by remember { mutableStateOf<Empleado?>(null) }
     var loading by remember { mutableStateOf(true) }
     var editando by remember { mutableStateOf(false) }
-    var formData by remember { mutableStateOf(Usuario()) }
+    var formData by remember { mutableStateOf(Empleado("", "", "", "", "", "", "", "", "", "")) }
     var mensaje by remember { mutableStateOf("") }
 
-    // 🔹 Cargar datos al iniciar
     LaunchedEffect(Unit) {
-        cargarUsuario(usuarioId) { user ->
-            usuario = user
+        cargarEmpleado(usuarioId) { user ->
+            empleado = user
             loading = false
         }
     }
@@ -53,7 +40,7 @@ fun ConsultarInformacionScreen(
         return
     }
 
-    if (usuario == null) {
+    if (empleado == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
             Text("❌ No se pudo cargar la información del usuario.", color = MaterialTheme.colorScheme.error)
         }
@@ -68,7 +55,6 @@ fun ConsultarInformacionScreen(
     ) {
         Text("Información de Cuenta", style = MaterialTheme.typography.headlineSmall)
         Text("Consulta y modifica los datos de tu cuenta.", style = MaterialTheme.typography.bodyMedium)
-
         Spacer(Modifier.height(12.dp))
 
         if (mensaje.isNotEmpty()) {
@@ -88,24 +74,24 @@ fun ConsultarInformacionScreen(
 
         campos.forEach { (key, label) ->
             val valorActual = when (key) {
-                "nombre" -> usuario!!.nombre
-                "apellido" -> usuario!!.apellido
-                "email" -> usuario!!.email
-                "telefono" -> usuario!!.telefono
-                "direccion" -> usuario!!.direccion
-                "fecha" -> usuario!!.fecha
-                "ciudad" -> usuario!!.ciudad
+                "nombre" -> empleado?.nombre ?: ""
+                "apellido" -> empleado?.apellido ?: ""
+                "email" -> empleado?.email ?: ""
+                "telefono" -> empleado?.telefono ?: ""
+                "direccion" -> empleado?.direccion ?: ""
+                "fecha" -> empleado?.fecha ?: ""
+                "ciudad" -> empleado?.ciudad ?: ""
                 else -> ""
             }
 
             val valorForm = when (key) {
-                "nombre" -> formData.nombre
-                "apellido" -> formData.apellido
-                "email" -> formData.email
-                "telefono" -> formData.telefono
-                "direccion" -> formData.direccion
-                "fecha" -> formData.fecha
-                "ciudad" -> formData.ciudad
+                "nombre" -> formData.nombre ?: ""
+                "apellido" -> formData.apellido ?: ""
+                "email" -> formData.email ?: ""
+                "telefono" -> formData.telefono ?: ""
+                "direccion" -> formData.direccion ?: ""
+                "fecha" -> formData.fecha ?: ""
+                "ciudad" -> formData.ciudad ?: ""
                 else -> ""
             }
 
@@ -132,9 +118,8 @@ fun ConsultarInformacionScreen(
         }
 
         Spacer(Modifier.height(12.dp))
-
-        Text("Rol: ${usuario!!.rol}")
-        Text("Código de empresa: ${usuario!!.codigo}")
+        Text("Rol: ${empleado?.rol ?: ""}")
+        Text("Código de empresa: ${empleado?.codigo ?: ""}")
 
         Spacer(Modifier.height(20.dp))
 
@@ -146,10 +131,10 @@ fun ConsultarInformacionScreen(
             } else {
                 Button(onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
-                        val actualizado = actualizarUsuario(usuarioId, usuario!!, formData)
+                        val actualizado = actualizarEmpleado(usuarioId, empleado!!, formData)
                         if (actualizado != null) {
-                            usuario = actualizado
-                            formData = Usuario()
+                            empleado = actualizado
+                            formData = Empleado("", "", "", "", "", "", "", "", "", "")
                             mensaje = "✅ Información actualizada correctamente."
                             editando = false
                         } else {
@@ -164,7 +149,7 @@ fun ConsultarInformacionScreen(
 
                 OutlinedButton(onClick = {
                     editando = false
-                    formData = Usuario()
+                    formData = Empleado("", "", "", "", "", "", "", "", "", "")
                 }) {
                     Text("Cancelar")
                 }
@@ -179,8 +164,8 @@ fun ConsultarInformacionScreen(
     }
 }
 
-// 🔹 Cargar usuario
-fun cargarUsuario(usuarioId: String, onResult: (Usuario?) -> Unit) {
+// 🔹 Funciones de carga y actualización usando Empleado
+fun cargarEmpleado(usuarioId: String, onResult: (Empleado?) -> Unit) {
     CoroutineScope(Dispatchers.IO).launch {
         try {
             val url = URL("http://10.0.2.2:3000/api/personas/$usuarioId")
@@ -189,7 +174,8 @@ fun cargarUsuario(usuarioId: String, onResult: (Usuario?) -> Unit) {
             val response = conn.inputStream.bufferedReader().readText()
             val obj = JSONObject(response)
 
-            val usuario = Usuario(
+            val empleado = Empleado(
+                _id = obj.optString("_id"),
                 nombre = obj.optString("nombre"),
                 apellido = obj.optString("apellido"),
                 email = obj.optString("email"),
@@ -200,24 +186,23 @@ fun cargarUsuario(usuarioId: String, onResult: (Usuario?) -> Unit) {
                 rol = obj.optString("rol"),
                 codigo = obj.optString("codigo")
             )
-            onResult(usuario)
+            onResult(empleado)
         } catch (e: Exception) {
             onResult(null)
         }
     }
 }
 
-// 🔹 Actualizar usuario
-fun actualizarUsuario(usuarioId: String, usuario: Usuario, formData: Usuario): Usuario? {
+fun actualizarEmpleado(usuarioId: String, empleado: Empleado, formData: Empleado): Empleado? {
     return try {
-        val actualizado = usuario.copy(
-            nombre = if (formData.nombre.isNotEmpty()) formData.nombre else usuario.nombre,
-            apellido = if (formData.apellido.isNotEmpty()) formData.apellido else usuario.apellido,
-            email = if (formData.email.isNotEmpty()) formData.email else usuario.email,
-            telefono = if (formData.telefono.isNotEmpty()) formData.telefono else usuario.telefono,
-            direccion = if (formData.direccion.isNotEmpty()) formData.direccion else usuario.direccion,
-            ciudad = if (formData.ciudad.isNotEmpty()) formData.ciudad else usuario.ciudad,
-            fecha = if (formData.fecha.isNotEmpty()) formData.fecha else usuario.fecha
+        val actualizado = empleado.copy(
+            nombre = formData.nombre ?: empleado.nombre,
+            apellido = formData.apellido ?: empleado.apellido,
+            email = formData.email ?: empleado.email,
+            telefono = formData.telefono ?: empleado.telefono,
+            direccion = formData.direccion ?: empleado.direccion,
+            ciudad = formData.ciudad ?: empleado.ciudad,
+            fecha = formData.fecha ?: empleado.fecha
         )
 
         val url = URL("http://10.0.2.2:3000/api/personas/$usuarioId")

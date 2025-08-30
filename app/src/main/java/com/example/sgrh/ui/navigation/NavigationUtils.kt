@@ -19,5 +19,6 @@ fun navigateByRole(navController: NavController, rol: String, userId: String?, e
         "empleado" -> navController.navigate("empleadoInicio/$uid/$eid") {
             popUpTo("login") { inclusive = true }
         }
+        
     }
 }

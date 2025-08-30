@@ -10,6 +10,9 @@ import com.example.sgrh.ui.pages.rrhh.RrhhHomeScreen
 import com.example.sgrh.ui.pages.supervisor.SupervisorHomeScreen
 import com.example.sgrh.ui.pages.empleado.EmpleadoHomeScreen
 import com.example.sgrh.ui.components.BaseLayout
+import com.example.sgrh.components.QuejasSugerenciasForm
+import com.example.sgrh.ui.components.ConsultarInformacionScreen
+
 
 @Composable
 fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
@@ -50,5 +53,12 @@ fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
                 EmpleadoHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
+        composable("quejas") {
+            QuejasSugerenciasForm(onBack = { navController.popBackStack() })
+        }
+        composable("informacion") {
+            ConsultarInformacionScreen(onVolver = { navController.popBackStack() })
+        }
+
     }
 }
