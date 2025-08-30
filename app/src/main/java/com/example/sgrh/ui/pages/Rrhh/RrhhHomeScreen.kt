@@ -11,11 +11,6 @@ fun RrhhHomeScreen(
 ) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
-    // --- Datos de ejemplo informes y permisos ---
-    val informesEjemplo = listOf(
-        Informe("I3", "Informe de RRHH Q2", "Resumen segundo trimestre", "2025-06-30")
-    )
-
     val permisosEjemplo = listOf(
         Permiso("P3", "Mario Sánchez", "Vacaciones", "2025-08-10", "pendiente")
     )
@@ -40,15 +35,14 @@ fun RrhhHomeScreen(
         )
 
         "informes" -> GestionInformes(
-            informes = informesEjemplo,
-            onCrearInforme = { nombre, descripcion ->
-                println("📌 Informe creado: $nombre - $descripcion")
-            },
+            empresaId = empresaId,
+            apiService = RetrofitClient.api,
             onRevisar = { informe ->
                 println("👀 Revisando informe: ${informe._id} - ${informe.nombre}")
             },
             onVolver = { opcionSeleccionada = null }
         )
+
 
         "permisos" -> GestionPermisos(
             permisos = permisosEjemplo,

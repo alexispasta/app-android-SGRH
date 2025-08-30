@@ -78,6 +78,19 @@ data class ReporteRequest(
     val empresaId: String
 )
 
+data class Informe(
+    val _id: String,
+    val nombre: String,
+    val descripcion: String?,
+    val createdAt: String
+)
+
+data class InformeRequest(
+    val nombre: String,
+    val descripcion: String?,
+    val empresaId: String
+)
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -116,4 +129,10 @@ interface ApiService {
 
     @POST("/api/reportes")
     suspend fun crearReporte(@Body reporte: ReporteRequest): Response<Reporte>
+
+    @GET("/api/informes/empresa/{empresaId}")
+    suspend fun getInformesPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Informe>>
+
+    @POST("/api/informes")
+    suspend fun crearInforme(@Body request: InformeRequest): Response<Informe>
 }
