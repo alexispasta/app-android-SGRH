@@ -14,7 +14,10 @@ import com.example.sgrh.ui.components.Informe
 import com.example.sgrh.ui.components.Permiso
 
 @Composable
-fun SupervisorHomeScreen(usuarioId: String = "") {
+fun SupervisorHomeScreen(
+    usuarioId: String = "",
+    empresaId: String = ""   // ✅ añadimos empresaId
+) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
     // -------- Datos de ejemplo empleados (para reportes) --------
@@ -67,6 +70,7 @@ fun SupervisorHomeScreen(usuarioId: String = "") {
 
     when (opcionSeleccionada) {
         "asistencia" -> GestionAsistenciaScreen(
+            empresaId = empresaId,   // ✅ ahora sí se pasa
             onVolver = { opcionSeleccionada = null }
         )
 

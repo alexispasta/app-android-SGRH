@@ -1,4 +1,3 @@
-// 📂 ui/pages/gerente/GestionAsistenciaScreen.kt
 package com.example.sgrh.ui.components
 
 import androidx.compose.foundation.background
@@ -12,22 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.sgrh.data.remote.*
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
-
-// 🔹 Modelo de Empleado
-data class EmpleadoAsistencia(
-    val id: String,
-    val nombre: String,
-    val apellido: String,
-    val documento: String
-)
 
 @Composable
-fun GestionAsistenciaScreen(onVolver: () -> Unit) {
+fun GestionAsistenciaScreen(
+    onVolver: () -> Unit,
+    empresaId: String // 📌 ahora lo recibimos como parámetro
+) {
     var fecha by remember { mutableStateOf("") }
     var empleados by remember { mutableStateOf(listOf<EmpleadoAsistencia>()) }
     var asistencia by remember { mutableStateOf(mutableMapOf<String, String>()) }
@@ -35,123 +26,97 @@ fun GestionAsistenciaScreen(onVolver: () -> Unit) {
     var historial by remember { mutableStateOf(listOf<String>()) }
 
     val scope = rememberCoroutineScope()
-    val empresaId = "123456" // TODO: usar SharedPreferences o ViewModel
 
     // 🔹 Cargar empleados
-    LaunchedEffect(Unit) {
+    LaunchedEffect(empresaId) {
         scope.launch {
             try {
-                val url = URL("http://10.0.2.2:3000/api/personas/empresa/$empresaId")
-                val conn = url.openConnection() as HttpURLConnection
-                val data = conn.inputStream.bufferedReader().readText()
-                val json = JSONArray(data)
-                val lista = mutableListOf<EmpleadoAsistencia>()
-                for (i in 0 until json.length()) {
-                    val obj = json.getJSONObject(i)
-                    lista.add(
-                        EmpleadoAsistencia(
-                            id = obj.getString("_id"),
-                            nombre = obj.getString("nombre"),
-                            apellido = obj.getString("apellido"),
-                            documento = obj.optString("codigo", obj.optString("documento", ""))
-                        )
-                    )
+                val response = RetrofitClient.api.getEmpleados(empresaId)
+                if (response.isSuccessful) {
+                    empleados = response.body() ?: emptyList()
+                } else {
+                    mensaje = "Error al cargar empleados"
                 }
-                empleados = lista
             } catch (e: Exception) {
-                mensaje = "Error al cargar empleados"
+                mensaje = "Error de conexión"
             }
         }
     }
 
     // 🔹 Cargar historial
-    LaunchedEffect(Unit) {
+    LaunchedEffect(empresaId) {
         scope.launch {
             try {
-                val url = URL("http://10.0.2.2:3000/api/gerente/asistencia/historial/$empresaId")
-                val conn = url.openConnection() as HttpURLConnection
-                val data = conn.inputStream.bufferedReader().readText()
-                val json = JSONArray(data)
-                historial = List(json.length()) { json.getString(it) }
+                val response = RetrofitClient.api.getHistorial(empresaId)
+                if (response.isSuccessful) {
+                    historial = response.body() ?: emptyList()
+                }
             } catch (_: Exception) {}
         }
     }
 
-    // 🔹 Función para guardar asistencia
+    // 🔹 Guardar asistencia
     fun guardarAsistencia() {
         if (fecha.isBlank()) {
             mensaje = "Debe seleccionar una fecha"
             return
         }
-
         scope.launch {
             try {
-                val registros = JSONArray()
-                empleados.forEach { emp ->
-                    val obj = JSONObject()
-                    obj.put("documento", emp.documento)
-                    obj.put("fecha", fecha)
-                    obj.put("estado", asistencia[emp.id] ?: "Presente")
-                    obj.put("empresaId", empresaId)
-                    registros.put(obj)
+                val registros = empleados.map { emp ->
+                    AsistenciaRequest(
+                        documento = emp.codigo ?: emp.documento.orEmpty(),
+                        fecha = fecha,
+                        estado = asistencia[emp._id] ?: "Presente",
+                        empresaId = empresaId
+                    )
                 }
 
-                val url = URL("http://10.0.2.2:3000/api/gerente/asistencia")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "POST"
-                conn.setRequestProperty("Content-Type", "application/json")
-                conn.doOutput = true
-                conn.outputStream.write(registros.toString().toByteArray())
+                val response = RetrofitClient.api.guardarAsistencia(registros)
+                if (response.isSuccessful) {
+                    mensaje = response.body()?.message ?: "Asistencia guardada ✅"
 
-                val response = conn.inputStream.bufferedReader().readText()
-                val jsonRes = JSONObject(response)
-                mensaje = jsonRes.optString("message", "Asistencia guardada ✅")
-
-                // refrescar historial
-                val histUrl = URL("http://10.0.2.2:3000/api/gerente/asistencia/historial/$empresaId")
-                val histConn = histUrl.openConnection() as HttpURLConnection
-                val histData = histConn.inputStream.bufferedReader().readText()
-                val histJson = JSONArray(histData)
-                historial = List(histJson.length()) { histJson.getString(it) }
-
+                    // refrescar historial
+                    val histResponse = RetrofitClient.api.getHistorial(empresaId)
+                    if (histResponse.isSuccessful) {
+                        historial = histResponse.body() ?: emptyList()
+                    }
+                } else {
+                    mensaje = "Error al guardar asistencia"
+                }
             } catch (e: Exception) {
-                mensaje = "Error al guardar asistencia"
+                mensaje = "Error de conexión"
             }
         }
     }
 
-    // 🔹 Cargar asistencia previa de una fecha
+    // 🔹 Cargar asistencia por fecha
     fun cargarAsistenciaFecha(f: String) {
         fecha = f
         scope.launch {
             try {
-                val url = URL("http://10.0.2.2:3000/api/gerente/asistencia/$empresaId/$f")
-                val conn = url.openConnection() as HttpURLConnection
-                val data = conn.inputStream.bufferedReader().readText()
-                val json = JSONArray(data)
-
-                val estados = mutableMapOf<String, String>()
-                for (i in 0 until json.length()) {
-                    val obj = json.getJSONObject(i)
-                    val documento = obj.getString("documento")
-                    val estado = obj.getString("estado")
-                    val empleado = empleados.find { it.documento == documento }
-                    if (empleado != null) estados[empleado.id] = estado
+                val response = RetrofitClient.api.getAsistenciaPorFecha(empresaId, f)
+                if (response.isSuccessful) {
+                    val registros = response.body() ?: emptyList()
+                    val estados = mutableMapOf<String, String>()
+                    registros.forEach { reg ->
+                        val empleado = empleados.find {
+                            it.codigo == reg.documento || it.documento == reg.documento
+                        }
+                        if (empleado != null) estados[empleado._id] = reg.estado
+                    }
+                    asistencia = estados
                 }
-                asistencia = estados
             } catch (_: Exception) {}
         }
     }
 
+    // 📌 UI
     Row(
-        Modifier
-            .fillMaxSize()
-            .padding(12.dp)
+        Modifier.fillMaxSize().padding(12.dp)
     ) {
         // 📌 Tabla de asistencia
-        Column(
-            Modifier.weight(2f).padding(end = 12.dp)
-        ) {
+        Column(Modifier.weight(2f).padding(end = 12.dp)) {
             Text("Gestión de Asistencia", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(8.dp))
 
@@ -182,14 +147,14 @@ fun GestionAsistenciaScreen(onVolver: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("${emp.nombre} ${emp.apellido}", modifier = Modifier.weight(1f))
-                            Text(emp.documento, modifier = Modifier.weight(1f))
+                            Text(emp.codigo ?: emp.documento.orEmpty(), modifier = Modifier.weight(1f))
 
-                            var estado by remember { mutableStateOf(asistencia[emp.id] ?: "Presente") }
+                            var estado by remember { mutableStateOf(asistencia[emp._id] ?: "Presente") }
                             DropdownMenuEstado(
                                 estado = estado,
                                 onEstadoSeleccionado = {
                                     estado = it
-                                    asistencia[emp.id] = it
+                                    asistencia[emp._id] = it
                                 }
                             )
                         }
@@ -211,9 +176,7 @@ fun GestionAsistenciaScreen(onVolver: () -> Unit) {
         }
 
         // 📌 Historial
-        Column(
-            Modifier.weight(1f).fillMaxHeight()
-        ) {
+        Column(Modifier.weight(1f).fillMaxHeight()) {
             Text("Historial de Fechas", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
 
@@ -236,7 +199,7 @@ fun GestionAsistenciaScreen(onVolver: () -> Unit) {
     }
 }
 
-// 🔹 Composable para menú desplegable de estado
+// 🔹 Menú desplegable de estado
 @Composable
 fun DropdownMenuEstado(estado: String, onEstadoSeleccionado: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }

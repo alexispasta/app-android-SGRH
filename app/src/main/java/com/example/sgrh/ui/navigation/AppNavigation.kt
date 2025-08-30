@@ -13,12 +13,11 @@ import com.example.sgrh.ui.pages.rrhh.RrhhHomeScreen
 import com.example.sgrh.ui.pages.registro.RegistrarEmpresaScreen
 import com.example.sgrh.ui.pages.roles.RolesSelectorScreen
 import com.example.sgrh.components.QuejasSugerenciasForm
-import com.example.sgrh.ui.components.InformacionCuentaForm // ⚠️ asegúrate que exista
+import com.example.sgrh.ui.components.InformacionCuentaForm
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
 
-    // 🔹 Acción de logout global
     val onLogout: () -> Unit = {
         navController.navigate("login") {
             popUpTo(0) { inclusive = true }
@@ -29,52 +28,57 @@ fun AppNavigation(navController: NavHostController) {
         navController = navController,
         startDestination = "login"
     ) {
-        // Login
         composable("login") {
             LoginScreen(navController = navController)
         }
 
-        // Selector de roles
         composable("roles") {
             RolesSelectorScreen(navController = navController)
         }
 
-        // Pantallas por rol envueltas en BaseLayout
         composable("empleadoInicio") {
             BaseLayout(navController = navController, rol = "empleado", onLogout = onLogout) {
                 EmpleadoHomeScreen()
             }
         }
 
-        composable("gerenteInicio") {
+        composable("gerenteInicio/{usuarioId}/{empresaId}") { backStackEntry ->
+            val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
+            val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
+
             BaseLayout(navController = navController, rol = "gerente", onLogout = onLogout) {
-                GerenteHomeScreen()
+                GerenteHomeScreen(usuarioId = usuarioId, empresaId = empresaId)  // ✅ ahora recibe ambos
             }
         }
 
-        composable("supervisorInicio") {
+
+        composable("supervisorInicio/{usuarioId}/{empresaId}") { backStackEntry ->
+            val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
+            val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
+
             BaseLayout(navController = navController, rol = "supervisor", onLogout = onLogout) {
-                SupervisorHomeScreen()
+                SupervisorHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
 
-        composable("rrhhInicio") {
+
+        // ✅ rrhhInicio ahora recibe usuarioId y empresaId reales
+        composable("rrhhInicio/{usuarioId}/{empresaId}") { backStackEntry ->
+            val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
+            val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
+
             BaseLayout(navController = navController, rol = "rrhh", onLogout = onLogout) {
-                RrhhHomeScreen()
+                RrhhHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
 
-        // Pantalla de Quejas y Sugerencias
         composable("quejas/{rol}") { backStackEntry ->
             val rol = backStackEntry.arguments?.getString("rol") ?: "empleado"
             BaseLayout(navController = navController, rol = rol, onLogout = onLogout) {
-                QuejasSugerenciasForm(
-                    onBack = { navController.popBackStack() }
-                )
+                QuejasSugerenciasForm(onBack = { navController.popBackStack() })
             }
         }
 
-        // Pantalla de información de cuenta
         composable("informacion/{rol}/{usuarioId}") { backStackEntry ->
             val rol = backStackEntry.arguments?.getString("rol") ?: "empleado"
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
@@ -86,7 +90,6 @@ fun AppNavigation(navController: NavHostController) {
             }
         }
 
-        // Otras pantallas
         composable("registrarEmpresa") { RegistrarEmpresaScreen() }
         composable("registrarPersona") { /* TODO */ }
     }

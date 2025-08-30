@@ -107,8 +107,8 @@ fun LoginScreen(
                         ),
                         keyboardActions = KeyboardActions(
                             onDone = {
-                                viewModel.login { rol ->
-                                    navigateByRole(navController, rol)
+                                viewModel.login { rol, userId, empresaId ->
+                                    navigateByRole(navController, rol, userId, empresaId)
                                 }
                             }
                         ),
@@ -119,8 +119,8 @@ fun LoginScreen(
 
                     Button(
                         onClick = {
-                            viewModel.login { rol ->
-                                navigateByRole(navController, rol)
+                            viewModel.login { rol, userId, empresaId ->
+                                navigateByRole(navController, rol, userId, empresaId)
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -206,14 +206,21 @@ fun LoginScreen(
     }
 }
 
-// Navegación con rol en minúsculas
-fun navigateByRole(navController: NavController, rol: String) {
-    println("Navigating for role: $rol") // ✅ log para depuración
-    when (rol.lowercase()) {
-        "gerente" -> navController.navigate("gerenteInicio") { popUpTo("login") { inclusive = true } }
-        "rrhh" -> navController.navigate("rrhhInicio") { popUpTo("login") { inclusive = true } }
-        "supervisor" -> navController.navigate("supervisorInicio") { popUpTo("login") { inclusive = true } }
-        "empleado" -> navController.navigate("empleadoInicio") { popUpTo("login") { inclusive = true } }
-        else -> println("Rol desconocido: $rol")
+// Navegación con parámetros reales
+fun navigateByRole(navController: NavController, rol: String, userId: String?, empresaId: String?) {
+    when (rol.lowercase()) { // ✅ normalizamos
+        "gerente" -> navController.navigate("gerenteInicio/${userId ?: ""}/${empresaId ?: ""}") {
+            popUpTo("login") { inclusive = true }
+        }
+        "rrhh" -> navController.navigate("rrhhInicio/${userId ?: ""}/${empresaId ?: ""}") {
+            popUpTo("login") { inclusive = true }
+        }
+        "supervisor" -> navController.navigate("supervisorInicio/${userId ?: ""}/${empresaId ?: ""}") {
+            popUpTo("login") { inclusive = true }
+        }
+        "empleado" -> navController.navigate("empleadoInicio") {
+            popUpTo("login") { inclusive = true }
+        }
     }
 }
+

@@ -13,73 +13,38 @@ import com.example.sgrh.ui.components.RegistrarPersonaScreen
 import com.example.sgrh.ui.components.EmpleadosTablaScreen
 import com.example.sgrh.ui.components.Empresa
 import com.example.sgrh.ui.components.MenuOpcionesGerente
-import com.example.sgrh.ui.components.EmpleadoReporte   // <- el modelo específico para reportes
+import com.example.sgrh.ui.components.EmpleadoReporte
 import com.example.sgrh.ui.components.Reporte
 import com.example.sgrh.ui.components.Informe
 
 @Composable
-fun GerenteHomeScreen(usuarioId: String = "") {
+fun GerenteHomeScreen(
+    usuarioId: String = "",
+    empresaId: String = ""   // ✅ ahora también recibe empresaId
+) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
     // -------- Datos de ejemplo empleados (para reportes) --------
     val empleadosReportesEjemplo = listOf(
-        EmpleadoReporte(
-            _id = "1",
-            nombre = "Juan",
-            apellido = "Pérez",
-            codigo = "EMP001"
-        ),
-        EmpleadoReporte(
-            _id = "2",
-            nombre = "María",
-            apellido = "García",
-            codigo = "EMP002"
-        )
+        EmpleadoReporte("1", "Juan", "Pérez", "EMP001"),
+        EmpleadoReporte("2", "María", "García", "EMP002")
     )
 
     // -------- Datos de ejemplo historial reportes --------
     val historialReportesEjemplo = listOf(
-        Reporte(
-            _id = "R1",
-            asunto = "Falta injustificada",
-            descripcion = "No se presentó el 12/08",
-            empleadoId = "1",
-            createdAt = "2025-08-24"
-        )
+        Reporte("R1", "Falta injustificada", "No se presentó el 12/08", "1", "2025-08-24")
     )
 
     // -------- Datos de ejemplo informes --------
     val informesEjemplo = listOf(
-        Informe(
-            _id = "I1",
-            nombre = "Informe de desempeño Q1",
-            descripcion = "Resumen del primer trimestre",
-            createdAt = "2025-03-31"
-        ),
-        Informe(
-            _id = "I2",
-            nombre = "Informe de capacitación",
-            descripcion = "Cursos completados por el equipo",
-            createdAt = "2025-06-15"
-        )
+        Informe("I1", "Informe de desempeño Q1", "Resumen del primer trimestre", "2025-03-31"),
+        Informe("I2", "Informe de capacitación", "Cursos completados por el equipo", "2025-06-15")
     )
 
     // -------- Datos de ejemplo permisos --------
     val permisosEjemplo = listOf(
-        Permiso(
-            _id = "P1",
-            empleadoNombre = "Carlos López",
-            motivo = "Cita médica",
-            createdAt = "2025-08-20",
-            estado = "pendiente"
-        ),
-        Permiso(
-            _id = "P2",
-            empleadoNombre = "Ana Torres",
-            motivo = "Viaje familiar",
-            createdAt = "2025-08-18",
-            estado = "aprobado"
-        )
+        Permiso("P1", "Carlos López", "Cita médica", "2025-08-20", "pendiente"),
+        Permiso("P2", "Ana Torres", "Viaje familiar", "2025-08-18", "aprobado")
     )
 
     when (opcionSeleccionada) {
@@ -88,6 +53,7 @@ fun GerenteHomeScreen(usuarioId: String = "") {
         )
 
         "asistencia" -> GestionAsistenciaScreen(
+            empresaId = empresaId,   // ✅ ahora se pasa empresaId
             onVolver = { opcionSeleccionada = null }
         )
 

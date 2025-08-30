@@ -23,7 +23,7 @@ class LoginViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(password = newPassword)
     }
 
-    fun login(onLoginSuccess: (rol: String) -> Unit) {
+    fun login(onLoginSuccess: (rol: String, userId: String, empresaId: String?) -> Unit) {
         val email = _uiState.value.email
         val password = _uiState.value.password
 
@@ -34,36 +34,31 @@ class LoginViewModel : ViewModel() {
                     RetrofitClient.api.login(LoginRequest(email, password))
 
                 println("Login response code: ${response.code()}")
-                println("Login response body: ${response.body()}") // ✅ debug
+                println("Login response body: ${response.body()}")
 
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.usuario != null) {
-                        println("Login exitoso! Rol: ${body.usuario.rol}")
+                        val usuario = body.usuario
+                        println("✅ Login exitoso! Rol: ${usuario.rol}")
                         _uiState.value = _uiState.value.copy(
                             loading = false,
                             error = "",
-                            rol = body.usuario.rol,
-                            userId = body.usuario._id,
-                            empresaId = body.usuario.empresaId
+                            rol = usuario.rol,
+                            userId = usuario._id,
+                            empresaId = usuario.empresaId
                         )
-                        onLoginSuccess(body.usuario.rol)
+                        onLoginSuccess(usuario.rol, usuario._id, usuario.empresaId)
                     } else {
                         _uiState.value = _uiState.value.copy(
                             loading = false,
-                            error = body?.message ?: "Usuario o contraseña incorrecta"
+                            error = body?.error ?: body?.message ?: "Usuario o contraseña incorrecta"
                         )
                     }
                 } else {
-                    val errorMessage = when (response.code()) {
-                        400 -> "Email y contraseña son requeridos"
-                        401 -> "Contraseña incorrecta"
-                        404 -> "Usuario no encontrado"
-                        else -> "Error HTTP: ${response.code()}"
-                    }
                     _uiState.value = _uiState.value.copy(
                         loading = false,
-                        error = errorMessage
+                        error = "Error HTTP: ${response.code()}"
                     )
                 }
 
