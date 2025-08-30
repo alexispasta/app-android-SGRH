@@ -1,25 +1,17 @@
 package com.example.sgrh.ui.pages.rrhh
 
 import androidx.compose.runtime.*
+import com.example.sgrh.data.remote.RetrofitClient
 import com.example.sgrh.ui.components.*
 
 @Composable
 fun RrhhHomeScreen(
     usuarioId: String = "",
-    empresaId: String = ""   // ✅ recibimos ambos parámetros reales
+    empresaId: String = ""
 ) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
-    // --- Datos de ejemplo (luego reemplazarás por API real) ---
-    val empleadosReportesEjemplo = listOf(
-        EmpleadoReporte("1", "Pedro", "Ramírez", "EMP101"),
-        EmpleadoReporte("2", "Lucía", "Fernández", "EMP102")
-    )
-
-    val historialReportesEjemplo = listOf(
-        Reporte("R2", "Llegada tardía", "Empleado llegó tarde el 22/08", "1", "2025-08-22")
-    )
-
+    // --- Datos de ejemplo informes y permisos ---
     val informesEjemplo = listOf(
         Informe("I3", "Informe de RRHH Q2", "Resumen segundo trimestre", "2025-06-30")
     )
@@ -30,23 +22,23 @@ fun RrhhHomeScreen(
 
     when (opcionSeleccionada) {
         "empleados" -> EmpleadosTablaScreen(onVolver = { opcionSeleccionada = null })
+
         "asistencia" -> GestionAsistenciaScreen(
             empresaId = empresaId,
             onVolver = { opcionSeleccionada = null }
         )
+
         "nomina" -> GestionNominaScreen(
-            onVolver = { opcionSeleccionada = null },
-            empresaId = empresaId // 🔹 PASAMOS empresaId
+            empresaId = empresaId,
+            onVolver = { opcionSeleccionada = null }
         )
 
         "reportes" -> GestionReportes(
-            empleados = empleadosReportesEjemplo,
-            historial = historialReportesEjemplo,
-            onEnviarReporte = { empleadoId, asunto, descripcion ->
-                println("📌 Reporte enviado: $empleadoId - $asunto - $descripcion")
-            },
+            empresaId = empresaId,
+            apiService = RetrofitClient.api,
             onVolver = { opcionSeleccionada = null }
         )
+
         "informes" -> GestionInformes(
             informes = informesEjemplo,
             onCrearInforme = { nombre, descripcion ->
@@ -57,6 +49,7 @@ fun RrhhHomeScreen(
             },
             onVolver = { opcionSeleccionada = null }
         )
+
         "permisos" -> GestionPermisos(
             permisos = permisosEjemplo,
             onAccion = { id, nuevoEstado ->
@@ -64,12 +57,15 @@ fun RrhhHomeScreen(
             },
             onVolver = { opcionSeleccionada = null }
         )
+
         "sistema" -> ConfiguracionSistema(
             empresaInicial = Empresa(),
             onGuardar = { /* TODO */ },
             onVolver = { opcionSeleccionada = null }
         )
+
         "registrarPersona" -> RegistrarPersonaScreen(onVolver = { opcionSeleccionada = null })
+
         else -> MenuOpcionesRrhh { seleccion -> opcionSeleccionada = seleccion }
     }
 }

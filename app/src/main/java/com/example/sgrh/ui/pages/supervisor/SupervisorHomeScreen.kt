@@ -1,91 +1,39 @@
 package com.example.sgrh.ui.pages.supervisor
 
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.example.sgrh.ui.components.GestionAsistenciaScreen
-import com.example.sgrh.ui.components.GestionNominaScreen
-import com.example.sgrh.ui.components.GestionReportes
-import com.example.sgrh.ui.components.GestionInformes
-import com.example.sgrh.ui.components.GestionPermisos
-import com.example.sgrh.ui.components.MenuOpcionesSupervisor
-import com.example.sgrh.ui.components.EmpleadoReporte
-import com.example.sgrh.ui.components.Reporte
-import com.example.sgrh.ui.components.Informe
-import com.example.sgrh.ui.components.Permiso
+import com.example.sgrh.data.remote.RetrofitClient
+import com.example.sgrh.ui.components.*
 
 @Composable
 fun SupervisorHomeScreen(
     usuarioId: String = "",
-    empresaId: String = ""   // ✅ añadimos empresaId
+    empresaId: String = ""   // recibimos empresaId
 ) {
     var opcionSeleccionada by remember { mutableStateOf<String?>(null) }
 
-    // -------- Datos de ejemplo empleados (para reportes) --------
-    val empleadosReportesEjemplo = listOf(
-        EmpleadoReporte(
-            _id = "1",
-            nombre = "Juan",
-            apellido = "Pérez",
-            codigo = "SUP001"
-        ),
-        EmpleadoReporte(
-            _id = "2",
-            nombre = "María",
-            apellido = "García",
-            codigo = "SUP002"
-        )
-    )
-
-    // -------- Datos de ejemplo historial reportes --------
-    val historialReportesEjemplo = listOf(
-        Reporte(
-            _id = "R1",
-            asunto = "Llegada tardía",
-            descripcion = "Empleado llegó 30 min tarde",
-            empleadoId = "1",
-            createdAt = "2025-08-24"
-        )
-    )
-
-    // -------- Datos de ejemplo informes --------
+    // --- Datos de ejemplo informes y permisos ---
     val informesEjemplo = listOf(
-        Informe(
-            _id = "I1",
-            nombre = "Informe semanal",
-            descripcion = "Resumen de asistencia semanal",
-            createdAt = "2025-08-20"
-        )
+        Informe("I1", "Informe semanal", "Resumen de asistencia semanal", "2025-08-20")
     )
 
-    // -------- Datos de ejemplo permisos --------
     val permisosEjemplo = listOf(
-        Permiso(
-            _id = "P1",
-            empleadoNombre = "Carlos López",
-            motivo = "Cita médica",
-            createdAt = "2025-08-22",
-            estado = "pendiente"
-        )
+        Permiso("P1", "Carlos López", "Cita médica", "2025-08-22", "pendiente")
     )
 
     when (opcionSeleccionada) {
         "asistencia" -> GestionAsistenciaScreen(
-            empresaId = empresaId,   // ✅ ahora sí se pasa
+            empresaId = empresaId,
             onVolver = { opcionSeleccionada = null }
         )
 
         "nomina" -> GestionNominaScreen(
-            onVolver = { opcionSeleccionada = null },
-            empresaId = empresaId // 🔹 PASAMOS empresaId
+            empresaId = empresaId,
+            onVolver = { opcionSeleccionada = null }
         )
 
-
         "reportes" -> GestionReportes(
-            empleados = empleadosReportesEjemplo,
-            historial = historialReportesEjemplo,
-            onEnviarReporte = { empleadoId, asunto, descripcion ->
-                println("📌 Reporte enviado: $empleadoId - $asunto - $descripcion")
-            },
+            empresaId = empresaId,
+            apiService = RetrofitClient.api,
             onVolver = { opcionSeleccionada = null }
         )
 

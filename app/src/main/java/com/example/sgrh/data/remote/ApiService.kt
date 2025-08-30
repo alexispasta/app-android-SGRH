@@ -55,6 +55,29 @@ data class Nomina(
     val empresaId: String
 )
 
+// 🔹 Modelo de Reportes
+data class EmpleadoReporte(
+    val _id: String,
+    val nombre: String,
+    val apellido: String,
+    val codigo: String
+)
+
+data class Reporte(
+    val _id: String,
+    val asunto: String,
+    val descripcion: String,
+    val empleadoId: EmpleadoReporte,
+    val createdAt: String
+)
+
+data class ReporteRequest(
+    val asunto: String,
+    val descripcion: String,
+    val empleadoId: String,
+    val empresaId: String
+)
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -86,4 +109,11 @@ interface ApiService {
 
     @DELETE("/api/nomina/{id}")
     suspend fun eliminarNomina(@Path("id") id: String): Response<GenericResponse>
+
+    // 🔹 Endpoints de Reportes
+    @GET("/api/reportes/empresa/{empresaId}")
+    suspend fun getReportesPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Reporte>>
+
+    @POST("/api/reportes")
+    suspend fun crearReporte(@Body reporte: ReporteRequest): Response<Reporte>
 }

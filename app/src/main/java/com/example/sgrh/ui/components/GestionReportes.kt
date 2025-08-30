@@ -7,44 +7,57 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.sgrh.data.remote.*
 import kotlinx.coroutines.launch
-
-// 🔹 Modelo de datos (renombrado para evitar choque con otros Empleado)
-data class EmpleadoReporte(
-    val _id: String,
-    val nombre: String,
-    val apellido: String,
-    val codigo: String
-)
-
-data class Reporte(
-    val _id: String,
-    val asunto: String,
-    val descripcion: String,
-    val empleadoId: String,
-    val createdAt: String
-)
 
 @Composable
 fun GestionReportes(
-    empleados: List<EmpleadoReporte>,
-    historial: List<Reporte>,
-    onEnviarReporte: (String, String, String) -> Unit,
+    empresaId: String,
+    apiService: ApiService,
     onVolver: () -> Unit
 ) {
+    var empleados by remember { mutableStateOf<List<EmpleadoReporte>>(emptyList()) }
     var empleadoSeleccionado by remember { mutableStateOf<EmpleadoReporte?>(null) }
     var asunto by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf<String?>(null) }
+    var historial by remember { mutableStateOf<List<Reporte>>(emptyList()) }
 
     val scope = rememberCoroutineScope()
+
+    // 🔹 Cargar empleados y reportes al inicio
+    LaunchedEffect(empresaId) {
+        try {
+            val respEmpleados = apiService.getEmpleados(empresaId)
+            if (respEmpleados.isSuccessful) {
+                empleados = respEmpleados.body()?.map { e ->
+                    EmpleadoReporte(
+                        _id = e._id,
+                        nombre = e.nombre,
+                        apellido = e.apellido,
+                        codigo = e.codigo ?: ""
+                    )
+                } ?: emptyList()
+            } else {
+                mensaje = "Error al cargar empleados ❌"
+            }
+
+            val respReportes = apiService.getReportesPorEmpresa(empresaId)
+            if (respReportes.isSuccessful) {
+                historial = respReportes.body() ?: emptyList()
+            } else {
+                mensaje = "Error al cargar reportes ❌"
+            }
+        } catch (e: Exception) {
+            mensaje = "Error: ${e.message}"
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-
         Text("Gestión de Reportes", style = MaterialTheme.typography.headlineSmall)
 
         mensaje?.let {
@@ -59,28 +72,32 @@ fun GestionReportes(
         Spacer(Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxSize()) {
-            // Columna izquierda
+            // --- Columna izquierda: Selección de empleado / nuevo reporte ---
             Column(modifier = Modifier.weight(1f)) {
                 if (empleadoSeleccionado == null) {
                     Text("Empleados", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
 
-                    LazyColumn {
-                        items(empleados) { emp ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                onClick = { empleadoSeleccionado = emp }
-                            ) {
-                                Row(
+                    if (empleados.isEmpty()) {
+                        Text("No hay empleados disponibles", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        LazyColumn {
+                            items(empleados) { emp ->
+                                Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                        .padding(vertical = 4.dp),
+                                    onClick = { empleadoSeleccionado = emp }
                                 ) {
-                                    Text("${emp.nombre} ${emp.apellido} (${emp.codigo})")
-                                    Text("➕")
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("${emp.nombre} ${emp.apellido} (${emp.codigo})")
+                                        Text("➕")
+                                    }
                                 }
                             }
                         }
@@ -119,15 +136,29 @@ fun GestionReportes(
                                         descripcion.isNotBlank()
                                     ) {
                                         scope.launch {
-                                            onEnviarReporte(
-                                                empleadoSeleccionado!!._id,
-                                                asunto,
-                                                descripcion
-                                            )
-                                            mensaje = "Reporte enviado correctamente ✅"
-                                            empleadoSeleccionado = null
-                                            asunto = ""
-                                            descripcion = ""
+                                            try {
+                                                val request = ReporteRequest(
+                                                    asunto = asunto,
+                                                    descripcion = descripcion,
+                                                    empleadoId = empleadoSeleccionado!!._id,
+                                                    empresaId = empresaId
+                                                )
+                                                val response = apiService.crearReporte(request)
+                                                if (response.isSuccessful) {
+                                                    mensaje = "Reporte enviado correctamente ✅"
+                                                    empleadoSeleccionado = null
+                                                    asunto = ""
+                                                    descripcion = ""
+                                                    // 🔹 actualizar historial con el nuevo reporte
+                                                    response.body()?.let { nuevo ->
+                                                        historial = listOf(nuevo) + historial
+                                                    }
+                                                } else {
+                                                    mensaje = "Error al enviar reporte ❌"
+                                                }
+                                            } catch (e: Exception) {
+                                                mensaje = "Error: ${e.message}"
+                                            }
                                         }
                                     } else {
                                         mensaje = "Completa todos los campos ❌"
@@ -147,7 +178,7 @@ fun GestionReportes(
 
             Spacer(Modifier.width(16.dp))
 
-            // Columna derecha
+            // --- Columna derecha: Historial de reportes ---
             Column(modifier = Modifier.weight(1f)) {
                 Text("Historial de Reportes", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
@@ -167,7 +198,7 @@ fun GestionReportes(
                             ) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text(r.asunto, style = MaterialTheme.typography.titleMedium)
-                                    Text("Empleado: ${r.empleadoId}")
+                                    Text("Empleado: ${r.empleadoId.nombre} ${r.empleadoId.apellido}")
                                     Text("Fecha: ${r.createdAt}")
                                 }
                             }
