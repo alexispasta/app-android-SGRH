@@ -11,6 +11,7 @@ import com.example.sgrh.ui.components.PermisosEmpleadoScreen
 import com.example.sgrh.ui.components.RegistroCertificacion
 import com.example.sgrh.ui.components.MenuOpcionesEmpleado
 import com.example.sgrh.data.remote.RetrofitClient
+import com.example.sgrh.ui.components.EmpleadoDetalleForm
 
 
 @Composable
@@ -31,9 +32,9 @@ fun EmpleadoHomeScreen(
 
         when (opcionSeleccionada) {
             "consultar" -> {
-                InformacionCuentaForm(
+                EmpleadoDetalleForm(
                     usuarioId = usuarioId,
-                    onBack = { opcionSeleccionada = null }
+                    onCerrar = { opcionSeleccionada = null }
                 )
             }
             "permisos" -> PermisosEmpleadoScreen(
