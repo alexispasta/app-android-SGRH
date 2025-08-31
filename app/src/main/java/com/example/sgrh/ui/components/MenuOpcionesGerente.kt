@@ -15,7 +15,7 @@ fun MenuOpcionesGerente(onSeleccionar: (String) -> Unit) {
         "reportes" to "Gestión de reportes",
         "informes" to "Gestión de informes",
         "permisos" to "Gestión de permisos",
-        "sistema" to "Configuración del sistema",
+        "sistema" to "Info empresa",
         "registrarPersona" to "Registrar usuario"
     )
 

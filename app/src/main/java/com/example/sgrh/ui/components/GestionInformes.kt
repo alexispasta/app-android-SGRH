@@ -1,6 +1,8 @@
 package com.example.sgrh.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -44,6 +46,7 @@ fun GestionInformes(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState()) // Toda la pantalla scrolleable
     ) {
         Text("Gestión de Informes", style = MaterialTheme.typography.headlineSmall)
 
@@ -106,7 +109,7 @@ fun GestionInformes(
 
         Spacer(Modifier.height(24.dp))
 
-        // 🔹 Tabla de informes
+        // 🔹 Lista de informes
         Text("Lista de Informes", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
 
@@ -116,11 +119,18 @@ fun GestionInformes(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 400.dp) // Limita altura, para no bloquear el scroll completo
+            ) {
                 items(informes) { informe ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                    ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
@@ -138,7 +148,8 @@ fun GestionInformes(
 
         Spacer(Modifier.height(16.dp))
 
-        OutlinedButton(onClick = onVolver) {
+        // Botón de volver siempre al final
+        OutlinedButton(onClick = onVolver, modifier = Modifier.fillMaxWidth()) {
             Text("← Volver al Menú")
         }
     }

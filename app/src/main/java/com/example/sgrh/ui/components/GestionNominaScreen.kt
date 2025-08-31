@@ -2,18 +2,14 @@ package com.example.sgrh.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.sgrh.data.remote.EmpleadoNomina
-import com.example.sgrh.data.remote.EmpleadoAsistencia
-import com.example.sgrh.data.remote.Nomina
-import com.example.sgrh.data.remote.RetrofitClient
+import com.example.sgrh.data.remote.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -21,13 +17,13 @@ fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
     var empleados by remember { mutableStateOf(listOf<EmpleadoNomina>()) }
     var nominas by remember { mutableStateOf(listOf<Nomina>()) }
     var datosNomina by remember { mutableStateOf<Nomina?>(null) }
-    var mostrarFormulario by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf("") }
     var mostrarModal by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     val api = RetrofitClient.api
 
+    // Cargar empleados y nóminas al iniciar
     LaunchedEffect(empresaId) {
         scope.launch {
             try {
@@ -70,22 +66,38 @@ fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
             descuentos = 0.0,
             empresaId = empresaId
         )
-        mostrarFormulario = true
     }
 
     fun guardarCambiosNomina() {
         scope.launch {
             try {
                 val nomina = datosNomina ?: return@launch
-                val response = if (nomina._id != null) api.actualizarNomina(nomina._id, nomina)
-                else api.crearNomina(nomina)
+                val payload = Nomina(
+                    _id = nomina._id,
+                    nombre = nomina.nombre,
+                    cedula = nomina.cedula,
+                    cuenta = nomina.cuenta,
+                    salario = nomina.salario,
+                    auxilio = nomina.auxilio,
+                    horasExtra = nomina.horasExtra,
+                    bonificacion = nomina.bonificacion,
+                    descuentos = nomina.descuentos,
+                    empresaId = nomina.empresaId
+                )
+
+                val response = if (payload._id != null) api.actualizarNomina(payload._id!!, payload)
+                else api.crearNomina(payload)
 
                 if (response.isSuccessful) {
                     val resNom = api.getNominas(empresaId)
                     if (resNom.isSuccessful) nominas = resNom.body() ?: emptyList()
-                    mostrarFormulario = false
+                    datosNomina = null
                     mostrarModal = true
-                } else mensaje = "❌ Error guardando nómina: ${response.message()}"
+                    mensaje = ""
+                } else {
+                    mensaje = "❌ Error guardando nómina: ${response.errorBody()?.string() ?: response.message()}"
+                }
+
             } catch (e: Exception) {
                 mensaje = "❌ Excepción al guardar: ${e.localizedMessage}"
             }
@@ -96,66 +108,68 @@ fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
         Modifier
             .fillMaxSize()
             .padding(12.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Text("Gestión de Nómina", style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(8.dp))
 
         if (mensaje.isNotEmpty()) {
-            Text(mensaje,
+            Text(
+                mensaje,
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFD9EDF7))
                     .padding(8.dp),
                 color = Color.Black
             )
+            Spacer(Modifier.height(8.dp))
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        LazyColumn {
-            items(empleados) { emp ->
-                Row(
-                    Modifier
+        // Mostrar botones de empleados solo si no hay ninguno seleccionado
+        if (datosNomina == null) {
+            empleados.forEach { emp ->
+                Button(
+                    onClick = { handleEditarClick(emp) },
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 4.dp)
                 ) {
-                    Text("${emp.nombre} ${emp.apellido}", Modifier.weight(1f))
-                    Text(emp.codigo, Modifier.weight(1f))
-                    Button(onClick = { handleEditarClick(emp) }) {
-                        Text(if (obtenerNominaEmpleado(emp.codigo) != null) "Editar Nómina" else "Crear Nómina")
-                    }
+                    Text("${emp.nombre} ${emp.apellido}")
                 }
-                Divider()
             }
         }
 
-        if (mostrarFormulario && datosNomina != null) {
+        // Formulario de edición de nómina
+        datosNomina?.let { nomina ->
             Spacer(Modifier.height(16.dp))
             Text("Información de Nómina", style = MaterialTheme.typography.titleMedium)
 
-            InputField("Nombre", datosNomina!!.nombre, onChange = {}, enabled = false)
-            InputField("Cédula", datosNomina!!.cedula, onChange = {}, enabled = false)
-            InputField("Cuenta Bancaria", datosNomina!!.cuenta,
-                onChange = { v -> datosNomina = datosNomina!!.copy(cuenta = v) })
-            InputField("Salario Base", datosNomina!!.salario.toString(),
-                onChange = { v -> datosNomina = datosNomina!!.copy(salario = v.toDoubleOrNull() ?: 0.0) })
-            InputField("Auxilio de Transporte", datosNomina!!.auxilio.toString(),
-                onChange = { v -> datosNomina = datosNomina!!.copy(auxilio = v.toDoubleOrNull() ?: 0.0) })
-            InputField("Horas Extra", datosNomina!!.horasExtra.toString(),
-                onChange = { v -> datosNomina = datosNomina!!.copy(horasExtra = v.toDoubleOrNull() ?: 0.0) })
-            InputField("Bonificaciones", datosNomina!!.bonificacion.toString(),
-                onChange = { v -> datosNomina = datosNomina!!.copy(bonificacion = v.toDoubleOrNull() ?: 0.0) })
-            InputField("Deducciones", datosNomina!!.descuentos.toString(),
-                onChange = { v -> datosNomina = datosNomina!!.copy(descuentos = v.toDoubleOrNull() ?: 0.0) })
+            InputField("Nombre", nomina.nombre, onChange = {}, enabled = false)
+            InputField("Cédula", nomina.cedula, onChange = {}, enabled = false)
+            InputField("Cuenta Bancaria", nomina.cuenta,
+                onChange = { v -> datosNomina = nomina.copy(cuenta = v) })
+            InputField("Salario Base", nomina.salario.toString(),
+                onChange = { v -> datosNomina = nomina.copy(salario = v.toDoubleOrNull() ?: 0.0) })
+            InputField("Auxilio de Transporte", nomina.auxilio.toString(),
+                onChange = { v -> datosNomina = nomina.copy(auxilio = v.toDoubleOrNull() ?: 0.0) })
+            InputField("Horas Extra", nomina.horasExtra.toString(),
+                onChange = { v -> datosNomina = nomina.copy(horasExtra = v.toDoubleOrNull() ?: 0.0) })
+            InputField("Bonificaciones", nomina.bonificacion.toString(),
+                onChange = { v -> datosNomina = nomina.copy(bonificacion = v.toDoubleOrNull() ?: 0.0) })
+            InputField("Deducciones", nomina.descuentos.toString(),
+                onChange = { v -> datosNomina = nomina.copy(descuentos = v.toDoubleOrNull() ?: 0.0) })
 
+            Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Button(onClick = { guardarCambiosNomina() }) { Text("Guardar Cambios") }
-                Button(onClick = { mostrarFormulario = false }, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) { Text("Cancelar") }
+                Button(onClick = { datosNomina = null }, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) { Text("Cancelar") }
             }
         }
 
         Spacer(Modifier.height(12.dp))
-        Button(onClick = onVolver, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) { Text("← Volver al Menú") }
+        Button(onClick = onVolver, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
+            Text("← Volver al Menú")
+        }
     }
 
     if (mostrarModal) {
@@ -173,7 +187,9 @@ fun InputField(label: String, value: String, onChange: (String) -> Unit, enabled
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         enabled = enabled,
         singleLine = true
     )

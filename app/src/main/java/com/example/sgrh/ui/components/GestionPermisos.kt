@@ -3,6 +3,8 @@ package com.example.sgrh.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -40,6 +42,7 @@ fun GestionPermisos(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState()) // Toda la pantalla scrolleable
     ) {
 
         Text(
@@ -65,95 +68,93 @@ fun GestionPermisos(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
-            LazyColumn {
-                items(permisos) { permiso ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                "Empleado: ${permiso.empleadoNombre}",
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text("Motivo: ${permiso.motivo}")
-                            Text("Fecha: ${permiso.createdAt}")
+            permisos.forEach { permiso ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "Empleado: ${permiso.empleadoNombre}",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text("Motivo: ${permiso.motivo}")
+                        Text("Fecha: ${permiso.createdAt}")
 
-                            Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(6.dp))
 
-                            val colorEstado = when (permiso.estado) {
-                                "pendiente" -> MaterialTheme.colorScheme.tertiary
-                                "aprobado" -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.error
-                            }
-                            Text(
-                                "Estado: ${permiso.estado}",
-                                color = colorEstado,
-                                fontWeight = FontWeight.Bold
-                            )
+                        val colorEstado = when (permiso.estado) {
+                            "pendiente" -> MaterialTheme.colorScheme.tertiary
+                            "aprobado" -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.error
+                        }
+                        Text(
+                            "Estado: ${permiso.estado}",
+                            color = colorEstado,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                            Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(8.dp))
 
-                            if (permiso.estado == "pendiente") {
-                                Row {
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                try {
-                                                    val resp = apiService.actualizarPermiso(
-                                                        permiso._id,
-                                                        mapOf("estado" to "aprobado")
-                                                    )
-                                                    if (resp.isSuccessful) {
-                                                        mensaje = "Permiso aprobado correctamente"
-                                                        permisos = permisos.map {
-                                                            if (it._id == permiso._id) it.copy(estado = "aprobado") else it
-                                                        }
-                                                    } else {
-                                                        mensaje = "❌ Error al aprobar: ${resp.code()}"
+                        if (permiso.estado == "pendiente") {
+                            Row {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val resp = apiService.actualizarPermiso(
+                                                    permiso._id,
+                                                    mapOf("estado" to "aprobado")
+                                                )
+                                                if (resp.isSuccessful) {
+                                                    mensaje = "Permiso aprobado correctamente"
+                                                    permisos = permisos.map {
+                                                        if (it._id == permiso._id) it.copy(estado = "aprobado") else it
                                                     }
-                                                } catch (e: Exception) {
-                                                    mensaje = "❌ ${e.message}"
+                                                } else {
+                                                    mensaje = "❌ Error al aprobar: ${resp.code()}"
                                                 }
+                                            } catch (e: Exception) {
+                                                mensaje = "❌ ${e.message}"
                                             }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
-                                        Text("Aprobar")
-                                    }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text("Aprobar")
+                                }
 
-                                    Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(8.dp))
 
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                try {
-                                                    val resp = apiService.actualizarPermiso(
-                                                        permiso._id,
-                                                        mapOf("estado" to "rechazado")
-                                                    )
-                                                    if (resp.isSuccessful) {
-                                                        mensaje = "Permiso rechazado correctamente"
-                                                        permisos = permisos.map {
-                                                            if (it._id == permiso._id) it.copy(estado = "rechazado") else it
-                                                        }
-                                                    } else {
-                                                        mensaje = "❌ Error al rechazar: ${resp.code()}"
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                val resp = apiService.actualizarPermiso(
+                                                    permiso._id,
+                                                    mapOf("estado" to "rechazado")
+                                                )
+                                                if (resp.isSuccessful) {
+                                                    mensaje = "Permiso rechazado correctamente"
+                                                    permisos = permisos.map {
+                                                        if (it._id == permiso._id) it.copy(estado = "rechazado") else it
                                                     }
-                                                } catch (e: Exception) {
-                                                    mensaje = "❌ ${e.message}"
+                                                } else {
+                                                    mensaje = "❌ Error al rechazar: ${resp.code()}"
                                                 }
+                                            } catch (e: Exception) {
+                                                mensaje = "❌ ${e.message}"
                                             }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error
-                                        )
-                                    ) {
-                                        Text("Rechazar")
-                                    }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Rechazar")
                                 }
                             }
                         }
@@ -164,7 +165,8 @@ fun GestionPermisos(
 
         Spacer(Modifier.height(16.dp))
 
-        OutlinedButton(onClick = onVolver) {
+        // Botón de volver siempre al final
+        OutlinedButton(onClick = onVolver, modifier = Modifier.fillMaxWidth()) {
             Text("← Volver al Menú")
         }
     }
