@@ -13,16 +13,28 @@ import com.example.sgrh.ui.components.BaseLayout
 import com.example.sgrh.components.QuejasSugerenciasForm
 import com.example.sgrh.ui.components.ConsultarInformacionScreen
 import com.example.sgrh.data.remote.RetrofitClient
-
-
+import com.example.sgrh.ui.pages.registro.RegistrarEmpresaScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
     NavHost(navController = navController, startDestination = "login") {
+
+        // --- LOGIN ---
         composable("login") {
             LoginScreen(navController = navController)
         }
 
+        // --- REGISTRO DE EMPRESA ---
+        composable("registrarEmpresa") {
+            RegistrarEmpresaScreen(
+                onSuccess = {
+                    // 🔹 Regresamos al login después de registrar
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // --- PANTALLAS POR ROL ---
         composable("gerenteInicio/{usuarioId}/{empresaId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
             val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
@@ -79,14 +91,15 @@ fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
             }
         }
 
+        // --- QUEJAS ---
         composable("quejas") {
             QuejasSugerenciasForm(
-                apiService = RetrofitClient.api, // <-- aquí pasamos la instancia
+                apiService = RetrofitClient.api,
                 onBack = { navController.popBackStack() }
             )
         }
 
-
+        // --- INFORMACIÓN ---
         composable("informacion/{usuarioId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
             ConsultarInformacionScreen(

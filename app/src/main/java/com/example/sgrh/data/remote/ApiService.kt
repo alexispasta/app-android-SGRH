@@ -138,6 +138,31 @@ data class QuejaRequest(
     val mensaje: String
 )
 
+// 🔹 RegistrarEmpresaRequest.kt
+data class RegistrarEmpresaRequest(
+    val nombreEmpresa: String,
+    val correoEmpresa: String,
+    val passwordEmpresa: String,
+    val pais: String,
+    val telefonoEmpresa: String,
+    val direccionEmpresa: String,
+
+    val nombrePersona: String,
+    val apellido: String,
+    val email: String,
+    val passwordPersona: String,
+    val telefonoPersona: String,
+    val direccionPersona: String,
+    val fecha: String,
+    val ciudad: String
+)
+
+data class RegistrarEmpresaResponse(
+    val message: String,
+    val empresaId: String?
+)
+
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -215,5 +240,11 @@ interface ApiService {
 
     @POST("/api/quejas")
     suspend fun enviarQueja(@Body request: QuejaRequest): Response<GenericResponse>
+
+    @POST("/api/empresas")
+    suspend fun registrarEmpresa(
+        @Body request: RegistrarEmpresaRequest
+    ): Response<RegistrarEmpresaResponse>
+
 
 }

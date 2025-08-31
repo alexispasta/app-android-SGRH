@@ -4,7 +4,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "https://historical-discipline-causes-statutes.trycloudflare.com/"
+    private const val BASE_URL = "https://highlight-survey-taylor-contract.trycloudflare.com/"
     // URL del túnel Cloudflare (con / al final)
 
     val api: ApiService by lazy {
