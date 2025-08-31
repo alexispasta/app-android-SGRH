@@ -71,6 +71,9 @@ fun GerenteHomeScreen(
             onVolver = { opcionSeleccionada = null }
         )
 
+
+
+
         else -> MenuOpcionesGerente { seleccion -> opcionSeleccionada = seleccion }
 
     }

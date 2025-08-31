@@ -11,7 +11,9 @@ import androidx.navigation.NavHostController
 @Composable
 fun BaseLayout(
     navController: NavHostController,
-    rol: String, // 🔹 ahora obligatorio para que no se pierda el rol
+    rol: String,
+    usuarioId: String,
+    empresaId: String,
     onLogout: () -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -20,11 +22,12 @@ fun BaseLayout(
             Topbar(
                 navController = navController,
                 onLogout = onLogout,
-                rol = rol
+                rol = rol,
+                usuarioId = usuarioId,
+                empresaId = empresaId
             )
         }
     ) { paddingValues ->
-        // Contenido dinámico debajo del TopBar
         Box(
             modifier = Modifier
                 .fillMaxSize()

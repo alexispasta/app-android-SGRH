@@ -205,5 +205,7 @@ interface ApiService {
     @POST("/api/personas")
     suspend fun crearEmpleado(@Body persona: RegistroPersona): Response<GenericResponse>
 
+    @GET("/api/personas/{empleadoId}")
+    suspend fun getEmpleadoById(@Path("empleadoId") empleadoId: String): Response<Empleado>
 
 }

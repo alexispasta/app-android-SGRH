@@ -16,15 +16,17 @@ import androidx.navigation.NavHostController
 fun Topbar(
     navController: NavHostController,
     onLogout: () -> Unit,
-    rol: String = "empleado"
+    rol: String = "empleado",
+    usuarioId: String,
+    empresaId: String
 ) {
     val rutasInicio = mapOf(
-        "empleado" to "empleadoInicio",
-        "rrhh" to "rrhhInicio",
-        "gerente" to "gerenteInicio",
-        "supervisor" to "supervisorInicio"
+        "empleado" to "empleadoInicio/$usuarioId/$empresaId",
+        "rrhh" to "rrhhInicio/$usuarioId/$empresaId",
+        "gerente" to "gerenteInicio/$usuarioId/$empresaId",
+        "supervisor" to "supervisorInicio/$usuarioId/$empresaId"
     )
-    val rutaInicio = rutasInicio[rol] ?: "empleadoInicio"
+    val rutaInicio = rutasInicio[rol] ?: "empleadoInicio/$usuarioId/$empresaId"
 
     Column(
         modifier = Modifier
@@ -32,7 +34,6 @@ fun Topbar(
             .background(Color.DarkGray)
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        // Logo / título arriba
         Text(
             text = "SGRH",
             style = MaterialTheme.typography.headlineSmall,
@@ -40,31 +41,22 @@ fun Topbar(
             modifier = Modifier.padding(bottom = 6.dp)
         )
 
-        // Menú de navegación debajo
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             TopbarItem("Inicio") {
-                navController.navigate(rutaInicio) {
-                    launchSingleTop = true  // evita duplicados y respeta el rol actual
-                }
+                navController.navigate(rutaInicio) { launchSingleTop = true }
             }
             TopbarItem("Quejas") {
-                navController.navigate("quejas") {
-                    launchSingleTop = true
-                }
+                navController.navigate("quejas") { launchSingleTop = true }
             }
             TopbarItem("Cuenta") {
-                navController.navigate("informacion") {
-                    launchSingleTop = true
-                }
+                navController.navigate("informacion/$usuarioId") { launchSingleTop = true }
             }
             TopbarItem("Salir") {
                 onLogout()
-                navController.navigate("login") {
-                    popUpTo(0) { inclusive = true }
-                }
+                navController.navigate("login") { popUpTo(0) { inclusive = true } }
             }
         }
     }

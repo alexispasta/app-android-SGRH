@@ -24,7 +24,13 @@ fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
         composable("gerenteInicio/{usuarioId}/{empresaId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
             val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
-            BaseLayout(navController = navController, rol = "gerente", onLogout = onLogout) {
+            BaseLayout(
+                navController = navController,
+                rol = "gerente",
+                usuarioId = usuarioId,
+                empresaId = empresaId,
+                onLogout = onLogout
+            ) {
                 GerenteHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
@@ -32,7 +38,13 @@ fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
         composable("rrhhInicio/{usuarioId}/{empresaId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
             val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
-            BaseLayout(navController = navController, rol = "rrhh", onLogout = onLogout) {
+            BaseLayout(
+                navController = navController,
+                rol = "rrhh",
+                usuarioId = usuarioId,
+                empresaId = empresaId,
+                onLogout = onLogout
+            ) {
                 RrhhHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
@@ -40,25 +52,41 @@ fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
         composable("supervisorInicio/{usuarioId}/{empresaId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
             val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
-            BaseLayout(navController = navController, rol = "supervisor", onLogout = onLogout) {
+            BaseLayout(
+                navController = navController,
+                rol = "supervisor",
+                usuarioId = usuarioId,
+                empresaId = empresaId,
+                onLogout = onLogout
+            ) {
                 SupervisorHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
 
-        // ✅ Nueva ruta para empleado
         composable("empleadoInicio/{usuarioId}/{empresaId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
             val empresaId = backStackEntry.arguments?.getString("empresaId") ?: ""
-            BaseLayout(navController = navController, rol = "empleado", onLogout = onLogout) {
+            BaseLayout(
+                navController = navController,
+                rol = "empleado",
+                usuarioId = usuarioId,
+                empresaId = empresaId,
+                onLogout = onLogout
+            ) {
                 EmpleadoHomeScreen(usuarioId = usuarioId, empresaId = empresaId)
             }
         }
+
         composable("quejas") {
             QuejasSugerenciasForm(onBack = { navController.popBackStack() })
         }
-        composable("informacion") {
-            ConsultarInformacionScreen(onVolver = { navController.popBackStack() })
-        }
 
+        composable("informacion/{usuarioId}") { backStackEntry ->
+            val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""
+            ConsultarInformacionScreen(
+                onVolver = { navController.popBackStack() },
+                usuarioId = usuarioId
+            )
+        }
     }
 }
