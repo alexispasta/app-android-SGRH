@@ -12,6 +12,8 @@ import com.example.sgrh.ui.pages.empleado.EmpleadoHomeScreen
 import com.example.sgrh.ui.components.BaseLayout
 import com.example.sgrh.components.QuejasSugerenciasForm
 import com.example.sgrh.ui.components.ConsultarInformacionScreen
+import com.example.sgrh.data.remote.RetrofitClient
+
 
 
 @Composable
@@ -78,8 +80,12 @@ fun AppNavigation(navController: NavHostController, onLogout: () -> Unit) {
         }
 
         composable("quejas") {
-            QuejasSugerenciasForm(onBack = { navController.popBackStack() })
+            QuejasSugerenciasForm(
+                apiService = RetrofitClient.api, // <-- aquí pasamos la instancia
+                onBack = { navController.popBackStack() }
+            )
         }
+
 
         composable("informacion/{usuarioId}") { backStackEntry ->
             val usuarioId = backStackEntry.arguments?.getString("usuarioId") ?: ""

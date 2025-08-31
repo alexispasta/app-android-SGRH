@@ -133,6 +133,11 @@ data class Empresa(
     var direccion: String = ""
 )
 
+data class QuejaRequest(
+    val asunto: String,
+    val mensaje: String
+)
+
 interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
@@ -207,5 +212,8 @@ interface ApiService {
 
     @GET("/api/personas/{empleadoId}")
     suspend fun getEmpleadoById(@Path("empleadoId") empleadoId: String): Response<Empleado>
+
+    @POST("/api/quejas")
+    suspend fun enviarQueja(@Body request: QuejaRequest): Response<GenericResponse>
 
 }
