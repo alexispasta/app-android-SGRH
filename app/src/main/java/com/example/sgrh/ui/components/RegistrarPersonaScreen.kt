@@ -18,7 +18,6 @@ import com.example.sgrh.data.remote.RegistroPersona
 import kotlinx.coroutines.launch
 import java.util.*
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrarPersonaScreen(
@@ -28,6 +27,7 @@ fun RegistrarPersonaScreen(
 ) {
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
+    var codigo by remember { mutableStateOf("") } // 🔹 Identificación de la persona
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
@@ -53,12 +53,13 @@ fun RegistrarPersonaScreen(
         val textFieldModifier = Modifier.fillMaxWidth()
 
         // Campos de texto
-        OutlinedTextField(nombre, onValueChange = { nombre = it }, label = { Text("Nombres") }, modifier = textFieldModifier)
-        OutlinedTextField(apellido, onValueChange = { apellido = it }, label = { Text("Apellidos") }, modifier = textFieldModifier)
-        OutlinedTextField(email, onValueChange = { email = it }, label = { Text("Correo Electrónico") }, modifier = textFieldModifier)
-        OutlinedTextField(password, onValueChange = { password = it }, label = { Text("Contraseña") }, modifier = textFieldModifier)
-        OutlinedTextField(telefono, onValueChange = { telefono = it }, label = { Text("Teléfono") }, modifier = textFieldModifier)
-        OutlinedTextField(direccion, onValueChange = { direccion = it }, label = { Text("Dirección") }, modifier = textFieldModifier)
+        OutlinedTextField(nombre, { nombre = it }, label = { Text("Nombres") }, modifier = textFieldModifier)
+        OutlinedTextField(apellido, { apellido = it }, label = { Text("Apellidos") }, modifier = textFieldModifier)
+        OutlinedTextField(codigo, { codigo = it }, label = { Text("Identificación") }, modifier = textFieldModifier) // 🔹 Nuevo campo
+        OutlinedTextField(email, { email = it }, label = { Text("Correo Electrónico") }, modifier = textFieldModifier)
+        OutlinedTextField(password, { password = it }, label = { Text("Contraseña") }, modifier = textFieldModifier)
+        OutlinedTextField(telefono, { telefono = it }, label = { Text("Teléfono") }, modifier = textFieldModifier)
+        OutlinedTextField(direccion, { direccion = it }, label = { Text("Dirección") }, modifier = textFieldModifier)
 
         Spacer(Modifier.height(12.dp))
 
@@ -88,7 +89,7 @@ fun RegistrarPersonaScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // Selector de fecha de nacimiento corregido
+        // Selector de fecha de nacimiento
         val calendar = Calendar.getInstance()
         val datePickerDialog = DatePickerDialog(
             context,
@@ -109,17 +110,17 @@ fun RegistrarPersonaScreen(
                 Icon(
                     imageVector = Icons.Filled.DateRange,
                     contentDescription = "Seleccionar fecha",
-                    modifier = Modifier.clickable { datePickerDialog.show() } // ícono clickeable
+                    modifier = Modifier.clickable { datePickerDialog.show() }
                 )
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { datePickerDialog.show() } // todo el campo clickeable
+                .clickable { datePickerDialog.show() }
         )
 
         Spacer(Modifier.height(12.dp))
 
-        OutlinedTextField(ciudad, onValueChange = { ciudad = it }, label = { Text("Ciudad") }, modifier = textFieldModifier)
+        OutlinedTextField(ciudad, { ciudad = it }, label = { Text("Ciudad") }, modifier = textFieldModifier)
 
         Spacer(Modifier.height(16.dp))
 
@@ -130,27 +131,25 @@ fun RegistrarPersonaScreen(
                 val nuevaPersona = RegistroPersona(
                     nombre = nombre,
                     apellido = apellido,
+                    codigo = codigo, // 🔹 Se envía al backend
                     email = email,
                     password = password,
                     telefono = if (telefono.isEmpty()) null else telefono,
                     direccion = if (direccion.isEmpty()) null else direccion,
-                    codigo = "",
                     rol = rol,
                     fecha = fechaNacimiento,
                     ciudad = if (ciudad.isEmpty()) null else ciudad,
                     empresaId = empresaId
                 )
 
-
-
                 scope.launch {
                     try {
-                        // ✅ Aquí pasamos la variable, no la clase
                         val response = apiService.crearEmpleado(nuevaPersona)
                         mensaje = if (response.isSuccessful) {
                             // Limpiar campos
                             nombre = ""
                             apellido = ""
+                            codigo = ""
                             email = ""
                             password = ""
                             telefono = ""
@@ -167,7 +166,6 @@ fun RegistrarPersonaScreen(
             },
             modifier = Modifier.fillMaxWidth()
         ) { Text("Registrar Persona") }
-
 
         Spacer(Modifier.height(12.dp))
 

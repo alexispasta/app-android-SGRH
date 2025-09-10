@@ -142,7 +142,6 @@ data class QuejaRequest(
 data class RegistrarEmpresaRequest(
     val nombreEmpresa: String,
     val correoEmpresa: String,
-    val passwordEmpresa: String,
     val pais: String,
     val telefonoEmpresa: String,
     val direccionEmpresa: String,
@@ -154,8 +153,10 @@ data class RegistrarEmpresaRequest(
     val telefonoPersona: String,
     val direccionPersona: String,
     val fecha: String,
-    val ciudad: String
+    val ciudad: String,
+    val codigo: String   // Identificación del gerente
 )
+
 
 data class RegistrarEmpresaResponse(
     val message: String,

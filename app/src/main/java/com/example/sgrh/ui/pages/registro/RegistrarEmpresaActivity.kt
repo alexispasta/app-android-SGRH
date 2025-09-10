@@ -1,4 +1,3 @@
-// RegistrarEmpresaScreen.kt
 package com.example.sgrh.ui.pages.registro
 
 import android.app.DatePickerDialog
@@ -26,7 +25,6 @@ fun RegistrarEmpresaScreen(
     // --- Datos Empresa ---
     var nombreEmpresa by remember { mutableStateOf("") }
     var correoEmpresa by remember { mutableStateOf("") }
-    var passwordEmpresa by remember { mutableStateOf("") }
     var pais by remember { mutableStateOf("") }
     var telefonoEmpresa by remember { mutableStateOf("") }
     var direccionEmpresa by remember { mutableStateOf("") }
@@ -34,6 +32,7 @@ fun RegistrarEmpresaScreen(
     // --- Datos Gerente ---
     var nombrePersona by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
+    var codigo by remember { mutableStateOf("") }   // Identificación del gerente
     var email by remember { mutableStateOf("") }
     var passwordPersona by remember { mutableStateOf("") }
     var telefonoPersona by remember { mutableStateOf("") }
@@ -45,8 +44,9 @@ fun RegistrarEmpresaScreen(
 
     fun validarCampos(): Boolean {
         val campos = listOf(
-            nombreEmpresa, correoEmpresa, passwordEmpresa, pais, telefonoEmpresa, direccionEmpresa,
-            nombrePersona, apellido, email, passwordPersona, telefonoPersona, direccionPersona, fecha, ciudad
+            nombreEmpresa, correoEmpresa, pais, telefonoEmpresa, direccionEmpresa,
+            nombrePersona, apellido, codigo, email, passwordPersona,
+            telefonoPersona, direccionPersona, fecha, ciudad
         )
         return campos.all { it.isNotBlank() }
     }
@@ -58,8 +58,9 @@ fun RegistrarEmpresaScreen(
         }
 
         val request = RegistrarEmpresaRequest(
-            nombreEmpresa, correoEmpresa, passwordEmpresa, pais, telefonoEmpresa, direccionEmpresa,
-            nombrePersona, apellido, email, passwordPersona, telefonoPersona, direccionPersona, fecha, ciudad
+            nombreEmpresa, correoEmpresa, pais, telefonoEmpresa, direccionEmpresa,
+            nombrePersona, apellido, email, passwordPersona,
+            telefonoPersona, direccionPersona, fecha, ciudad, codigo
         )
 
         scope.launch {
@@ -124,11 +125,6 @@ fun RegistrarEmpresaScreen(
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
-                value = passwordEmpresa, onValueChange = { passwordEmpresa = it },
-                label = { Text("Contraseña Empresa") }, modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
                 value = pais, onValueChange = { pais = it },
                 label = { Text("País") }, modifier = Modifier.fillMaxWidth()
             )
@@ -159,6 +155,11 @@ fun RegistrarEmpresaScreen(
             OutlinedTextField(
                 value = apellido, onValueChange = { apellido = it },
                 label = { Text("Apellidos") }, modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = codigo, onValueChange = { codigo = it },
+                label = { Text("Identificación") }, modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
