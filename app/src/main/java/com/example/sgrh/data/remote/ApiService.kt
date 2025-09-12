@@ -288,4 +288,8 @@ interface ApiService {
     suspend fun registrarEmpresa(
         @Body request: RegistrarEmpresaRequest
     ): Response<RegistrarEmpresaResponse>
+
+    @DELETE("/api/empresas/{id}")
+    suspend fun eliminarEmpresa(@Path("id") empresaId: String): Response<ApiResponse>
+
 }

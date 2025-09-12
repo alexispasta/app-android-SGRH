@@ -17,21 +17,20 @@ import kotlinx.coroutines.launch
 fun ConfiguracionSistema(
     empresaId: String,
     apiService: ApiService,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    onEliminarEmpresa: () -> Unit = {} // 👈 valor por defecto
 ) {
     var empresa by remember { mutableStateOf(Empresa()) }
     var mensaje by remember { mutableStateOf<Pair<String, String>?>(null) }
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
 
-    // 🔹 Cargar datos de la empresa al iniciar
+    // Cargar datos de la empresa
     LaunchedEffect(empresaId) {
         try {
             val response = apiService.getEmpresaById(empresaId)
             if (response.isSuccessful) {
-                response.body()?.let {
-                    empresa = it
-                }
+                response.body()?.let { empresa = it }
             } else {
                 mensaje = "error" to "No se pudo cargar la empresa"
             }
@@ -98,20 +97,20 @@ fun ConfiguracionSistema(
                 keyboardOptions = keyboardOpts,
                 maxLines = if (clave == "direccion") 4 else 1
             )
-
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Guardar cambios
         Button(
             onClick = {
                 scope.launch {
                     try {
                         val response = apiService.actualizarEmpresa(empresaId, empresa)
-                        if (response.isSuccessful) {
-                            mensaje = "exito" to "Cambios guardados correctamente"
+                        mensaje = if (response.isSuccessful) {
+                            "exito" to "Cambios guardados correctamente"
                         } else {
-                            mensaje = "error" to "Error al guardar cambios"
+                            "error" to "Error al guardar cambios"
                         }
                     } catch (e: Exception) {
                         mensaje = "error" to "Error al conectar con el servidor"
@@ -121,6 +120,31 @@ fun ConfiguracionSistema(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Guardar cambios")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Eliminar empresa y empleados
+        Button(
+            onClick = {
+                scope.launch {
+                    try {
+                        val response = apiService.eliminarEmpresa(empresaId)
+                        if (response.isSuccessful) {
+                            mensaje = "exito" to "❌ Empresa y empleados eliminados"
+                            onEliminarEmpresa()
+                        } else {
+                            mensaje = "error" to "No se pudo eliminar la empresa"
+                        }
+                    } catch (e: Exception) {
+                        mensaje = "error" to "Error al conectar con el servidor"
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text("Eliminar Empresa y Empleados")
         }
 
         Spacer(modifier = Modifier.height(12.dp))
