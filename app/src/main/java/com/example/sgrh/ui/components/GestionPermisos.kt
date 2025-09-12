@@ -3,8 +3,6 @@ package com.example.sgrh.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -24,59 +22,71 @@ fun GestionPermisos(
     var mensaje by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    // 🔹 Cargar permisos al iniciar
-    LaunchedEffect(empresaId) {
-        try {
-            val response = apiService.getPermisosPorEmpresa(empresaId)
-            if (response.isSuccessful) {
-                permisos = response.body() ?: emptyList()
-            } else {
-                mensaje = "❌ Error al cargar permisos: ${response.code()}"
+    // 🔹 Función para recargar lista desde el backend
+    fun recargarPermisos() {
+        if (empresaId.isBlank()) {
+            mensaje = "❌ Empresa inválida"
+            return
+        }
+        scope.launch {
+            try {
+                val response = apiService.getPermisosPorEmpresa(empresaId)
+                if (response.isSuccessful) {
+                    permisos = response.body() ?: emptyList()
+                } else {
+                    mensaje = "❌ Error al cargar permisos: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                mensaje = "❌ ${e.message}"
             }
-        } catch (e: Exception) {
-            mensaje = "❌ ${e.message}"
         }
     }
 
-    Column(
+    // 🔹 Cargar permisos al iniciar
+    LaunchedEffect(empresaId) {
+        recargarPermisos()
+    }
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()) // Toda la pantalla scrolleable
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
-        Text(
-            "Gestión de Permisos",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        mensaje?.let {
-            Spacer(Modifier.height(8.dp))
+        item {
             Text(
-                text = it,
-                color = if (it.contains("correctamente")) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.error
+                "Gestión de Permisos",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
+
+            mensaje?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = it,
+                    color = if (it.contains("correctamente")) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.error
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
         }
 
-        Spacer(Modifier.height(16.dp))
-
         if (permisos.isEmpty()) {
-            Text(
-                "No hay solicitudes de permisos para esta empresa",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            item {
+                Text(
+                    "No hay solicitudes de permisos para esta empresa",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
-            permisos.forEach { permiso ->
+            items(permisos) { permiso ->
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            "Empleado: ${permiso.empleadoNombre}",
+                            "Empleado: ${permiso.personaNombre}",
                             fontWeight = FontWeight.SemiBold
                         )
                         Text("Motivo: ${permiso.motivo}")
@@ -97,10 +107,14 @@ fun GestionPermisos(
 
                         Spacer(Modifier.height(8.dp))
 
-                        if (permiso.estado == "pendiente") {
-                            Row {
+                        Row {
+                            if (permiso.estado == "pendiente") {
                                 Button(
                                     onClick = {
+                                        if (permiso._id.isBlank()) {
+                                            mensaje = "❌ Permiso inválido"
+                                            return@Button
+                                        }
                                         scope.launch {
                                             try {
                                                 val resp = apiService.actualizarPermiso(
@@ -109,9 +123,7 @@ fun GestionPermisos(
                                                 )
                                                 if (resp.isSuccessful) {
                                                     mensaje = "Permiso aprobado correctamente"
-                                                    permisos = permisos.map {
-                                                        if (it._id == permiso._id) it.copy(estado = "aprobado") else it
-                                                    }
+                                                    recargarPermisos()
                                                 } else {
                                                     mensaje = "❌ Error al aprobar: ${resp.code()}"
                                                 }
@@ -131,6 +143,10 @@ fun GestionPermisos(
 
                                 Button(
                                     onClick = {
+                                        if (permiso._id.isBlank()) {
+                                            mensaje = "❌ Permiso inválido"
+                                            return@Button
+                                        }
                                         scope.launch {
                                             try {
                                                 val resp = apiService.actualizarPermiso(
@@ -139,9 +155,7 @@ fun GestionPermisos(
                                                 )
                                                 if (resp.isSuccessful) {
                                                     mensaje = "Permiso rechazado correctamente"
-                                                    permisos = permisos.map {
-                                                        if (it._id == permiso._id) it.copy(estado = "rechazado") else it
-                                                    }
+                                                    recargarPermisos()
                                                 } else {
                                                     mensaje = "❌ Error al rechazar: ${resp.code()}"
                                                 }
@@ -157,17 +171,85 @@ fun GestionPermisos(
                                     Text("Rechazar")
                                 }
                             }
+
+                            Spacer(Modifier.width(8.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    if (permiso._id.isBlank()) {
+                                        mensaje = "❌ Permiso inválido"
+                                        return@OutlinedButton
+                                    }
+                                    scope.launch {
+                                        try {
+                                            val resp = apiService.eliminarPermiso(permiso._id)
+                                            if (resp.isSuccessful) {
+                                                mensaje = "Permiso eliminado correctamente"
+                                                recargarPermisos()
+                                            } else {
+                                                mensaje = "❌ Error al eliminar: ${resp.code()}"
+                                            }
+                                        } catch (e: Exception) {
+                                            mensaje = "❌ ${e.message}"
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Text("Eliminar")
+                            }
                         }
                     }
                 }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        // 🔹 Footer con botones
+        item {
+            Spacer(Modifier.height(16.dp))
 
-        // Botón de volver siempre al final
-        OutlinedButton(onClick = onVolver, modifier = Modifier.fillMaxWidth()) {
-            Text("← Volver al Menú")
+            if (permisos.isNotEmpty()) {
+                Button(
+                    onClick = {
+                        if (empresaId.isBlank()) {
+                            mensaje = "❌ Empresa inválida"
+                            return@Button
+                        }
+                        scope.launch {
+                            try {
+                                val resp = apiService.eliminarTodosPermisos(empresaId)
+                                if (resp.isSuccessful) {
+                                    permisos = emptyList()
+                                    mensaje = "✅ Todos los permisos eliminados"
+                                } else {
+                                    mensaje = "❌ Error al eliminar todos: ${resp.code()}"
+                                }
+                            } catch (e: Exception) {
+                                mensaje = "❌ ${e.message}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("🗑 Eliminar TODOS los permisos")
+                }
+
+                Spacer(Modifier.height(8.dp))
+            }
+
+            OutlinedButton(
+                onClick = onVolver,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("← Volver al Menú")
+            }
+
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

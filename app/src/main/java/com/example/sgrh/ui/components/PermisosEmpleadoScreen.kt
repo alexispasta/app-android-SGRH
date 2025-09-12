@@ -13,6 +13,8 @@ import com.example.sgrh.data.remote.ApiService
 import com.example.sgrh.data.remote.Permiso
 import com.example.sgrh.data.remote.PermisoRequest
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun PermisosEmpleadoScreen(
@@ -28,23 +30,31 @@ fun PermisosEmpleadoScreen(
     var historial by remember { mutableStateOf<List<Permiso>>(emptyList()) }
 
     val scope = rememberCoroutineScope()
+    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
 
-    // 🔹 Cargar historial al iniciar
-    LaunchedEffect(empleadoId) {
-        try {
-            val response = apiService.getPermisosPorEmpleado(empleadoId)
-            if (response.isSuccessful) {
-                historial = response.body() ?: emptyList()
-            } else {
-                mensaje = "❌ Error al cargar historial: ${response.code()}"
+    // 🔹 Función para cargar historial de permisos
+    fun cargarHistorial() {
+        scope.launch {
+            try {
+                val response = apiService.getPermisosPorEmpleado(empleadoId)
+                if (response.isSuccessful) {
+                    historial = response.body() ?: emptyList()
+                    println("📌 Permisos recibidos: ${response.body()}")
+                } else {
+                    mensaje = "❌ Error al cargar historial: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                mensaje = "❌ ${e.message}"
             }
-        } catch (e: Exception) {
-            mensaje = "❌ ${e.message}"
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    // 🔹 Cargar historial al iniciar
+    LaunchedEffect(empleadoId) {
+        cargarHistorial()
+    }
 
+    Column(modifier = Modifier.fillMaxSize()) {
         // 🔹 Formulario de solicitud
         Column(
             modifier = Modifier
@@ -94,8 +104,8 @@ fun PermisosEmpleadoScreen(
                             scope.launch {
                                 try {
                                     val request = PermisoRequest(
-                                        empleadoId = empleadoId,
-                                        empleadoNombre = empleadoNombre,
+                                        personaId = empleadoId,
+                                        personaNombre = empleadoNombre,
                                         motivo = asunto,
                                         descripcion = razon,
                                         empresaId = empresaId
@@ -105,9 +115,7 @@ fun PermisosEmpleadoScreen(
                                         mensaje = "✅ Solicitud enviada correctamente"
                                         asunto = ""
                                         razon = ""
-                                        // Recargar historial
-                                        val respHistorial = apiService.getPermisosPorEmpleado(empleadoId)
-                                        historial = respHistorial.body() ?: emptyList()
+                                        cargarHistorial() // 🔹 recargar historial
                                     } else {
                                         mensaje = "❌ Error al enviar la solicitud: ${response.code()}"
                                     }
@@ -145,42 +153,68 @@ fun PermisosEmpleadoScreen(
         )
         Spacer(Modifier.height(8.dp))
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
-            items(historial) { p ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+        if (historial.isEmpty()) {
+            Text(
+                "No tienes solicitudes registradas",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // 🔹 importante para ocupar el espacio restante
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(historial) { p ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(4.dp)
                     ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("${p.motivo} - ${p.descripcion ?: ""}")
-                            Text("Fecha: ${p.createdAt}", style = MaterialTheme.typography.bodySmall)
-                        }
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = p.motivo, style = MaterialTheme.typography.bodyLarge)
+                            Text(text = p.descripcion ?: "", style = MaterialTheme.typography.bodyMedium)
 
-                        val estadoColor = when (p.estado) {
-                            "pendiente" -> MaterialTheme.colorScheme.tertiary
-                            "aprobado" -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.error
-                        }
+                            Spacer(Modifier.height(4.dp))
 
-                        Text(
-                            text = p.estado.uppercase(),
-                            color = estadoColor,
-                            style = MaterialTheme.typography.labelMedium
-                        )
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Fecha: ${
+                                        try {
+                                            dateFormat.format(
+                                                SimpleDateFormat(
+                                                    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                                                    Locale.getDefault()
+                                                ).parse(p.createdAt)
+                                            )
+                                        } catch (e: Exception) {
+                                            p.createdAt
+                                        }
+                                    }",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+
+                                val estadoColor = when (p.estado.lowercase(Locale.getDefault())) {
+                                    "pendiente" -> MaterialTheme.colorScheme.tertiary
+                                    "aprobado" -> MaterialTheme.colorScheme.primary
+                                    "rechazado" -> MaterialTheme.colorScheme.error
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                }
+
+                                Text(
+                                    text = p.estado.uppercase(),
+                                    color = estadoColor,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
-

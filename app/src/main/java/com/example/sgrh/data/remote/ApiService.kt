@@ -100,22 +100,26 @@ data class InformeRequest(
 
 data class Permiso(
     val _id: String,
-    val empleadoId: String,
-    val empleadoNombre: String,
+    val personaId: String,       // 🔹 coincide con backend
+    val personaNombre: String,   // 🔹 coincide con backend
     val motivo: String,
     val descripcion: String?,
     val estado: String,
-    val createdAt: String
+    val empresaId: String,       // 🔹 también lo devuelve el backend
+    val createdAt: String,
+    val updatedAt: String        // 🔹 lo agrega mongoose automáticamente
 )
 
+
 data class PermisoRequest(
-    val empleadoId: String,
-    val empleadoNombre: String,
+    val personaId: String,       // 🔹 debe ser personaId, no empleadoId
+    val personaNombre: String,   // opcional (backend ya lo reconstruye, pero puede ir)
     val motivo: String,
     val descripcion: String?,
     val estado: String = "pendiente",
     val empresaId: String
 )
+
 
 data class Empleado(
     val _id: String,
@@ -262,6 +266,14 @@ interface ApiService {
 
     @GET("/api/permisos/empresa/{empresaId}")
     suspend fun getPermisosPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Permiso>>
+
+    @DELETE("/api/permisos/{id}")
+    suspend fun eliminarPermiso(@Path("id") id: String): Response<Unit>
+
+    @DELETE("/api/permisos/empresa/{empresaId}")
+    suspend fun eliminarTodosPermisos(@Path("empresaId") empresaId: String): Response<Unit>
+
+
 
     @PUT("/api/personas/{id}")
     suspend fun actualizarEmpleado(@Path("id") id: String, @Body empleado: Empleado): Response<GenericResponse>
