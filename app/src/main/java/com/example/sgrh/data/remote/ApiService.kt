@@ -82,6 +82,7 @@ data class ReporteRequest(
     val empresaId: String
 )
 
+// 🔹 Informes
 data class Informe(
     val _id: String,
     val nombre: String,
@@ -234,11 +235,21 @@ interface ApiService {
     suspend fun eliminarTodosReportes(@Path("empresaId") empresaId: String): Response<GenericResponse>
 
 
+    // ---------------- INFORMES ----------------
     @GET("/api/informes/empresa/{empresaId}")
     suspend fun getInformesPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Informe>>
 
+    @GET("/api/informes/{id}")
+    suspend fun getInforme(@Path("id") id: String): Response<Informe>
+
     @POST("/api/informes")
     suspend fun crearInforme(@Body request: InformeRequest): Response<Informe>
+
+    @DELETE("/api/informes/{id}")
+    suspend fun eliminarInforme(@Path("id") id: String): Response<GenericResponse>
+
+    @DELETE("/api/informes/empresa/{empresaId}")
+    suspend fun eliminarInformesPorEmpresa(@Path("empresaId") empresaId: String): Response<GenericResponse>
 
     @GET("/api/permisos/empleado/{empleadoId}")
     suspend fun getPermisosPorEmpleado(@Path("empleadoId") empleadoId: String): Response<List<Permiso>>
