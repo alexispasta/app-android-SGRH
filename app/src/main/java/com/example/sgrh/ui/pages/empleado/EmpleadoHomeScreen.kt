@@ -47,9 +47,13 @@ fun EmpleadoHomeScreen(
 
             "certificacion" -> {
                 RegistroCertificacion(
+                    apiService = RetrofitClient.api, // tu cliente Retrofit
+                    personaId = usuarioId,           // id del empleado/usuario
+                    empresaId = empresaId,           // id de la empresa
                     onVolver = { opcionSeleccionada = null }
                 )
             }
+
             else -> {
                 MenuOpcionesEmpleado { seleccion -> opcionSeleccionada = seleccion }
             }

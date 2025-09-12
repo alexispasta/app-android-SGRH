@@ -2,6 +2,9 @@ package com.example.sgrh.data.remote
 
 import retrofit2.Response
 import retrofit2.http.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+
 
 data class LoginRequest(val email: String, val password: String)
 
@@ -174,6 +177,15 @@ data class RegistrarEmpresaResponse(
     val empresaId: String?
 )
 
+data class Certificado(
+    val _id: String,
+    val personaId: String,
+    val empresaId: String,
+    val nombre: String,
+    val archivoUrl: String?,
+    val fecha: String
+)
+
 
 interface ApiService {
     @POST("/api/login")
@@ -303,5 +315,20 @@ interface ApiService {
 
     @DELETE("/api/empresas/{id}")
     suspend fun eliminarEmpresa(@Path("id") empresaId: String): Response<ApiResponse>
+
+    @GET("/api/certificados/persona/{personaId}")
+    suspend fun getCertificadosPorPersona(@Path("personaId") personaId: String): Response<List<Certificado>>
+
+    @Multipart
+    @POST("/api/certificados")
+    suspend fun registrarCertificado(
+        @Part("personaId") personaId: RequestBody,
+        @Part("empresaId") empresaId: RequestBody,
+        @Part("nombre") nombre: RequestBody,
+        @Part archivo: MultipartBody.Part
+    ): Response<Certificado>
+
+    @DELETE("/api/certificados/{id}")
+    suspend fun eliminarCertificado(@Path("id") id: String): Response<Unit>
 
 }
