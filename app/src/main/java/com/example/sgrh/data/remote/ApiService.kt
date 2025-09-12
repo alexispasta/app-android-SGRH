@@ -11,6 +11,10 @@ data class Usuario(
     val empresaId: String?
 )
 
+data class ApiResponse(
+    val message: String
+)
+
 data class LoginResponse(
     val usuario: Usuario?,
     val message: String?,
@@ -67,14 +71,14 @@ data class Reporte(
     val _id: String,
     val asunto: String,
     val descripcion: String,
-    val empleadoId: EmpleadoReporte,
+    val personaId: EmpleadoReporte,   // 🔹 corregido
     val createdAt: String
 )
 
 data class ReporteRequest(
     val asunto: String,
     val descripcion: String,
-    val empleadoId: String,
+    val personaId: String,   // ✅ cambiado de empleadoId a personaId
     val empresaId: String
 )
 
@@ -82,7 +86,9 @@ data class Informe(
     val _id: String,
     val nombre: String,
     val descripcion: String?,
-    val createdAt: String
+    val empresaId: String,
+    val createdAt: String,
+    val updatedAt: String
 )
 
 data class InformeRequest(
@@ -171,6 +177,7 @@ interface ApiService {
     @GET("/api/personas/empresa/{empresaId}")
     suspend fun getEmpleados(@Path("empresaId") empresaId: String): Response<List<EmpleadoAsistencia>>
 
+    // ---------------- ASISTENCIA ----------------
     @GET("/api/asistencia/historial/{empresaId}")
     suspend fun getHistorial(@Path("empresaId") empresaId: String): Response<List<String>>
 
@@ -182,6 +189,17 @@ interface ApiService {
 
     @POST("/api/asistencia")
     suspend fun guardarAsistencia(@Body registros: List<AsistenciaRequest>): Response<GenericResponse>
+
+    // 🆕 Eliminar asistencia de una fecha específica
+    @DELETE("/api/asistencia/{empresaId}/{fecha}")
+    suspend fun eliminarAsistenciaPorFecha(
+        @Path("empresaId") empresaId: String,
+        @Path("fecha") fecha: String
+    ): Response<ApiResponse>
+
+    // 🆕 Eliminar historial completo
+    @DELETE("/api/asistencia/historial/{empresaId}")
+    suspend fun eliminarHistorialCompleto(@Path("empresaId") empresaId: String): Response<ApiResponse>
 
     // 🔹 Endpoints de Nómina
     @GET("/api/nomina/empresa/{empresaId}")
@@ -202,6 +220,19 @@ interface ApiService {
 
     @POST("/api/reportes")
     suspend fun crearReporte(@Body reporte: ReporteRequest): Response<Reporte>
+
+    // 🆕 Consultar un reporte por ID
+    @GET("/api/reportes/{id}")
+    suspend fun getReporteById(@Path("id") id: String): Response<Reporte>
+
+    // 🆕 Eliminar un reporte por ID
+    @DELETE("/api/reportes/{id}")
+    suspend fun eliminarReporte(@Path("id") id: String): Response<GenericResponse>
+
+    // 🆕 Eliminar todos los reportes de la empresa
+    @DELETE("/api/reportes/empresa/{empresaId}")
+    suspend fun eliminarTodosReportes(@Path("empresaId") empresaId: String): Response<GenericResponse>
+
 
     @GET("/api/informes/empresa/{empresaId}")
     suspend fun getInformesPorEmpresa(@Path("empresaId") empresaId: String): Response<List<Informe>>
@@ -246,6 +277,4 @@ interface ApiService {
     suspend fun registrarEmpresa(
         @Body request: RegistrarEmpresaRequest
     ): Response<RegistrarEmpresaResponse>
-
-
 }

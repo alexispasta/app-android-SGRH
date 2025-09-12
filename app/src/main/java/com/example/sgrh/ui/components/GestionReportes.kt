@@ -22,9 +22,10 @@ fun GestionReportes(
     var descripcion by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf<String?>(null) }
     var historial by remember { mutableStateOf<List<Reporte>>(emptyList()) }
+    var reporteSeleccionado by remember { mutableStateOf<Reporte?>(null) }
     val scope = rememberCoroutineScope()
 
-    // Cargar empleados y reportes
+    // 🔹 Cargar empleados y reportes
     LaunchedEffect(empresaId) {
         try {
             val respEmpleados = apiService.getEmpleados(empresaId)
@@ -56,7 +57,7 @@ fun GestionReportes(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()) // toda la pantalla scrolleable
+            .verticalScroll(rememberScrollState())
     ) {
         Text("Gestión de Reportes", style = MaterialTheme.typography.headlineSmall)
         mensaje?.let {
@@ -70,15 +71,11 @@ fun GestionReportes(
         Spacer(Modifier.height(16.dp))
 
         if (empleadoSeleccionado == null) {
-            // --- Pantalla de selección de empleados ---
+            // 🔹 Selección de empleados
             Text("Empleados", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-
             if (empleados.isEmpty()) {
-                Text(
-                    "No hay empleados disponibles",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("No hay empleados disponibles", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 empleados.forEach { emp ->
                     Card(
@@ -93,20 +90,15 @@ fun GestionReportes(
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("${emp.nombre} ${emp.apellido}") // ya no mostramos código
+                            Text("${emp.nombre} ${emp.apellido}")
                             Text("➕")
                         }
                     }
                 }
             }
-
-            Spacer(Modifier.height(16.dp))
         } else {
-            // --- Pantalla de nuevo reporte ---
-            Text(
-                "Nuevo reporte para ${empleadoSeleccionado!!.nombre}",
-                style = MaterialTheme.typography.titleMedium
-            )
+            // 🔹 Formulario nuevo reporte
+            Text("Nuevo reporte para ${empleadoSeleccionado!!.nombre}", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
@@ -133,7 +125,7 @@ fun GestionReportes(
                                     val request = ReporteRequest(
                                         asunto = asunto,
                                         descripcion = descripcion,
-                                        empleadoId = empleadoSeleccionado!!._id,
+                                        personaId = empleadoSeleccionado!!._id, // ✅ corregido
                                         empresaId = empresaId
                                     )
                                     val response = apiService.crearReporte(request)
@@ -156,9 +148,7 @@ fun GestionReportes(
                             mensaje = "Completa todos los campos ❌"
                         }
                     }
-                ) {
-                    Text("Guardar")
-                }
+                ) { Text("Guardar") }
                 Spacer(Modifier.width(8.dp))
                 OutlinedButton(onClick = { empleadoSeleccionado = null }) {
                     Text("Cancelar")
@@ -167,33 +157,92 @@ fun GestionReportes(
             Spacer(Modifier.height(16.dp))
         }
 
-        // --- Historial de reportes ---
+        // 🔹 Historial
         Text("Historial de Reportes", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         if (historial.isEmpty()) {
-            Text(
-                "No hay reportes registrados",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text("No hay reportes registrados", color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             historial.forEach { r ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 4.dp),
+                    onClick = { reporteSeleccionado = r }
                 ) {
                     Column(Modifier.padding(12.dp)) {
                         Text(r.asunto, style = MaterialTheme.typography.titleMedium)
-                        Text("Empleado: ${r.empleadoId.nombre} ${r.empleadoId.apellido}")
+                        Text("Empleado: ${r.personaId.nombre} ${r.personaId.apellido}") // ✅ corregido
                         Text("Fecha: ${r.createdAt}")
+                        if (reporteSeleccionado == r) {
+                            Text("✅ Seleccionado", color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
+
+            Spacer(Modifier.height(8.dp))
+            Row {
+                Button(
+                    onClick = {
+                        reporteSeleccionado?.let {
+                            mensaje = "📌 Asunto: ${it.asunto}\n📝 ${it.descripcion}"
+                        } ?: run { mensaje = "Seleccione un reporte ❌" }
+                    },
+                    modifier = Modifier.weight(1f)
+                ) { Text("Consultar") }
+
+                Spacer(Modifier.width(8.dp))
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            if (reporteSeleccionado != null) {
+                                try {
+                                    val res = apiService.eliminarReporte(reporteSeleccionado!!._id)
+                                    if (res.isSuccessful) {
+                                        historial = historial.filterNot { it._id == reporteSeleccionado!!._id }
+                                        reporteSeleccionado = null
+                                        mensaje = "Reporte eliminado ✅"
+                                    } else {
+                                        mensaje = "Error al eliminar ❌"
+                                    }
+                                } catch (e: Exception) {
+                                    mensaje = "Error: ${e.message}"
+                                }
+                            } else mensaje = "Seleccione un reporte ❌"
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
+                ) { Text("Eliminar") }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    scope.launch {
+                        try {
+                            val res = apiService.eliminarTodosReportes(empresaId)
+                            if (res.isSuccessful) {
+                                historial = emptyList()
+                                reporteSeleccionado = null
+                                mensaje = "Todos los reportes eliminados ✅"
+                            } else {
+                                mensaje = "Error al eliminar todos ❌"
+                            }
+                        } catch (e: Exception) {
+                            mensaje = "Error: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.error)
+            ) { Text("Eliminar Todos") }
         }
 
         Spacer(Modifier.height(16.dp))
-
-        // --- Botón de volver ---
         OutlinedButton(onClick = onVolver, modifier = Modifier.fillMaxWidth()) {
             Text("Volver")
         }
