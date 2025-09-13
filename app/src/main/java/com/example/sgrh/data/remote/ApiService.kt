@@ -305,6 +305,10 @@ interface ApiService {
     @GET("/api/personas/{empleadoId}")
     suspend fun getEmpleadoById(@Path("empleadoId") empleadoId: String): Response<Empleado>
 
+    @DELETE("/api/personas/{id}")
+    suspend fun eliminarEmpleado(@Path("id") id: String): Response<ApiResponse>
+
+
     @POST("/api/quejas")
     suspend fun enviarQueja(@Body request: QuejaRequest): Response<GenericResponse>
 

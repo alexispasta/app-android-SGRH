@@ -6,15 +6,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import com.example.sgrh.data.remote.ApiService
 import com.example.sgrh.data.remote.EmpleadoAsistencia
 import com.example.sgrh.data.remote.Empleado as RemoteEmpleado
 import com.example.sgrh.ui.models.Empleado
+import com.example.sgrh.ui.components.RegistroCertificacion
 import kotlinx.coroutines.launch
 
 // 🔹 Mapper de EmpleadoAsistencia → Empleado (UI)
@@ -40,6 +41,20 @@ fun Empleado.toRemote(empresaId: String): RemoteEmpleado = RemoteEmpleado(
     empresaId = empresaId
 )
 
+// 🔹 Mapper de RemoteEmpleado → Empleado (UI)
+fun RemoteEmpleado.toUI(): Empleado = Empleado(
+    _id = this._id,
+    nombre = this.nombre,
+    apellido = this.apellido,
+    codigo = this.codigo,
+    email = this.email,
+    telefono = this.telefono,
+    direccion = this.direccion,
+    rol = this.rol,
+    fecha = this.fecha,
+    ciudad = this.ciudad
+)
+
 @Composable
 fun EmpleadosTablaScreen(
     apiService: ApiService,
@@ -48,8 +63,11 @@ fun EmpleadosTablaScreen(
 ) {
     var empleados by remember { mutableStateOf(listOf<Empleado>()) }
     var empleadoEditando by remember { mutableStateOf<Empleado?>(null) }
+    var mostrarCertificados by remember { mutableStateOf(false) }
+    var personaSeleccionada by remember { mutableStateOf<Empleado?>(null) }
     var mensaje by remember { mutableStateOf<Pair<String, String>?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // 🔹 Cargar empleados al iniciar
     LaunchedEffect(Unit) {
@@ -66,11 +84,22 @@ fun EmpleadosTablaScreen(
         }
     }
 
+    // 🔹 Si mostrarCertificados es true, mostramos RegistroCertificacion
+    if (mostrarCertificados && personaSeleccionada != null) {
+        RegistroCertificacion(
+            apiService = apiService,
+            personaId = personaSeleccionada!!._id,
+            empresaId = empresaId,
+            onVolver = { mostrarCertificados = false }
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()) // 🔹 Scrollable
+            .verticalScroll(rememberScrollState())
     ) {
         Text("Gestión de Empleados", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(12.dp))
@@ -86,11 +115,29 @@ fun EmpleadosTablaScreen(
             Spacer(Modifier.height(8.dp))
         }
 
-        // 🔹 Si no hay empleado editando, mostrar lista de botones
         if (empleadoEditando == null) {
             empleados.forEach { emp ->
                 Button(
-                    onClick = { empleadoEditando = emp.copy() },
+                    onClick = {
+                        // 🔹 Cargar empleado completo antes de editar
+                        scope.launch {
+                            try {
+                                val resp = apiService.getEmpleadoById(emp._id)
+                                if (resp.isSuccessful) {
+                                    val remoteEmp = resp.body()
+                                    if (remoteEmp != null) {
+                                        empleadoEditando = remoteEmp.toUI()
+                                    } else {
+                                        mensaje = "error" to "Empleado no encontrado"
+                                    }
+                                } else {
+                                    mensaje = "error" to "Error al cargar empleado: ${resp.code()}"
+                                }
+                            } catch (e: Exception) {
+                                mensaje = "error" to (e.message ?: "Error al cargar empleado")
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
@@ -100,7 +147,6 @@ fun EmpleadosTablaScreen(
             }
         }
 
-        // 🔹 Formulario de edición, solo si hay empleado seleccionado
         empleadoEditando?.let { emp ->
             Spacer(Modifier.height(8.dp))
             Card(
@@ -153,7 +199,7 @@ fun EmpleadosTablaScreen(
 
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Button(onClick = {
                             scope.launch {
@@ -175,17 +221,48 @@ fun EmpleadosTablaScreen(
                             }
                         }) { Text("Guardar") }
 
-                        Spacer(Modifier.width(8.dp))
-
                         OutlinedButton(onClick = { empleadoEditando = null }) { Text("Cancelar") }
                     }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // 🔹 Botón eliminar empleado
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    val resp = apiService.eliminarEmpleado(emp._id)
+                                    mensaje = if (resp.isSuccessful) {
+                                        empleados = empleados.filter { it._id != emp._id }
+                                        empleadoEditando = null
+                                        "exito" to "Empleado eliminado correctamente ✅"
+                                    } else "error" to "Error al eliminar empleado: ${resp.code()}"
+                                } catch (e: Exception) {
+                                    mensaje = "error" to (e.message ?: "Error al eliminar")
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Eliminar Empleado") }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // 🔹 Botón para gestionar certificados
+                    Button(
+                        onClick = {
+                            personaSeleccionada = emp
+                            mostrarCertificados = true
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Gestionar Certificados") }
                 }
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // 🔹 Botón de volver siempre visible
         Button(
             onClick = onVolver,
             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
