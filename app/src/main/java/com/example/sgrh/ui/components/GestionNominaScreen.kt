@@ -13,7 +13,11 @@ import com.example.sgrh.data.remote.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
+fun GestionNominaScreen(
+    onVolver: () -> Unit,
+    empresaId: String,
+    apiService: ApiService = RetrofitClient.api // 👈 por defecto usa Retrofit real
+) {
     var empleados by remember { mutableStateOf(listOf<EmpleadoNomina>()) }
     var nominas by remember { mutableStateOf(listOf<Nomina>()) }
     var datosNomina by remember { mutableStateOf<Nomina?>(null) }
@@ -21,14 +25,13 @@ fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
     var mostrarModal by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
-    val api = RetrofitClient.api
 
     // Cargar empleados y nóminas al iniciar
     LaunchedEffect(empresaId) {
         scope.launch {
             try {
-                val resEmp = api.getEmpleados(empresaId)
-                val resNom = api.getNominas(empresaId)
+                val resEmp = apiService.getEmpleados(empresaId)
+                val resNom = apiService.getNominas(empresaId)
 
                 if (resEmp.isSuccessful && resNom.isSuccessful) {
                     val empleadosResp = resEmp.body() ?: emptyList<EmpleadoAsistencia>()
@@ -85,11 +88,14 @@ fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
                     empresaId = nomina.empresaId
                 )
 
-                val response = if (payload._id != null) api.actualizarNomina(payload._id!!, payload)
-                else api.crearNomina(payload)
+                val response = if (payload._id != null) {
+                    apiService.actualizarNomina(payload._id!!, payload)
+                } else {
+                    apiService.crearNomina(payload)
+                }
 
                 if (response.isSuccessful) {
-                    val resNom = api.getNominas(empresaId)
+                    val resNom = apiService.getNominas(empresaId)
                     if (resNom.isSuccessful) nominas = resNom.body() ?: emptyList()
                     datosNomina = null
                     mostrarModal = true
@@ -162,7 +168,10 @@ fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Button(onClick = { guardarCambiosNomina() }) { Text("Guardar Cambios") }
-                Button(onClick = { datosNomina = null }, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) { Text("Cancelar") }
+                Button(onClick = { datosNomina = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
+                    Text("Cancelar")
+                }
             }
         }
 
