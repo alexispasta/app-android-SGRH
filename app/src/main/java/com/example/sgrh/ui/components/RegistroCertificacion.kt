@@ -2,6 +2,7 @@ package com.example.sgrh.ui.components
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -17,21 +18,36 @@ import com.example.sgrh.data.remote.Certificado
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
-import java.io.FileOutputStream
 import java.io.InputStream
 
-// 🔹 Función para convertir Uri a MultipartBody.Part guardando en cache temporal
+// 🔹 Función corregida: obtener nombre real + MIME correcto
 fun Uri.toMultipartBody(context: Context, paramName: String): MultipartBody.Part? {
-    val inputStream: InputStream = context.contentResolver.openInputStream(this) ?: return null
-    val tempFile = File.createTempFile("upload", "tmp", context.cacheDir)
-    tempFile.outputStream().use { output ->
-        inputStream.copyTo(output)
+    val contentResolver = context.contentResolver
+    val inputStream: InputStream = contentResolver.openInputStream(this) ?: return null
+
+    // Nombre real del archivo
+    var fileName = "archivo_${System.currentTimeMillis()}"
+    val cursor = contentResolver.query(this, null, null, null, null)
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (index >= 0) fileName = it.getString(index)
+        }
     }
-    val reqFile: RequestBody = tempFile.asRequestBody("application/octet-stream".toMediaType())
-    return MultipartBody.Part.createFormData(paramName, tempFile.name, reqFile)
+
+    // Guardar en cache con ese nombre
+    val tempFile = File(context.cacheDir, fileName)
+    tempFile.outputStream().use { output -> inputStream.copyTo(output) }
+
+    // Detectar MIME real
+    val mimeType = contentResolver.getType(this) ?: "application/octet-stream"
+
+    // Crear parte del request
+    val reqFile = tempFile.asRequestBody(mimeType.toMediaType())
+    return MultipartBody.Part.createFormData(paramName, fileName, reqFile)
 }
 
 @Composable
@@ -63,14 +79,18 @@ fun RegistroCertificacion(
                 val resp = apiService.getCertificadosPorPersona(personaId)
                 if (resp.isSuccessful) certificados = resp.body() ?: emptyList()
                 else mensaje = "❌ Error al cargar certificados: ${resp.code()}"
-            } catch (e: Exception) { mensaje = "❌ ${e.message}" }
+            } catch (e: Exception) {
+                mensaje = "❌ ${e.message}"
+            }
         }
     }
 
     LaunchedEffect(personaId) { cargarCertificados() }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
@@ -79,45 +99,61 @@ fun RegistroCertificacion(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = it,
-                    color = if (it.contains("correctamente")) MaterialTheme.colorScheme.primary
+                    color = if (it.contains("✅")) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.error
                 )
             }
             Spacer(Modifier.height(16.dp))
         }
 
-        if (certificados.isEmpty()) item { Text("No hay certificados para esta persona") }
-        else items(certificados) { cert ->
-            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(cert.nombre, style = MaterialTheme.typography.bodyLarge)
-                    Text("Subido el ${cert.fecha}", style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.height(8.dp))
+        if (certificados.isEmpty()) {
+            item { Text("No hay certificados para esta persona") }
+        } else {
+            items(certificados) { cert ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(cert.nombre, style = MaterialTheme.typography.bodyLarge)
+                        Text("Subido el ${cert.fecha}", style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(8.dp))
 
-                    OutlinedButton(
-                        onClick = {
-                            if (cert._id.isBlank()) {
-                                mensaje = "❌ Certificado inválido"
-                                return@OutlinedButton
-                            }
-                            scope.launch {
-                                try {
-                                    val resp = apiService.eliminarCertificado(cert._id)
-                                    mensaje = if (resp.isSuccessful) "❌ Certificado eliminado correctamente"
-                                    else "❌ Error al eliminar: ${resp.code()}"
-                                    cargarCertificados()
-                                } catch (e: Exception) { mensaje = "❌ ${e.message}" }
-                            }
-                        },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) { Text("Eliminar") }
+                        OutlinedButton(
+                            onClick = {
+                                if (cert._id.isBlank()) {
+                                    mensaje = "❌ Certificado inválido"
+                                    return@OutlinedButton
+                                }
+                                scope.launch {
+                                    try {
+                                        val resp = apiService.eliminarCertificado(cert._id)
+                                        mensaje = if (resp.isSuccessful) {
+                                            "✅ Certificado eliminado correctamente"
+                                        } else {
+                                            "❌ Error al eliminar: ${resp.code()}"
+                                        }
+                                        cargarCertificados()
+                                    } catch (e: Exception) {
+                                        mensaje = "❌ ${e.message}"
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) { Text("Eliminar") }
+                    }
                 }
             }
         }
 
         item {
             Spacer(Modifier.height(16.dp))
-            OutlinedButton(onClick = { launcher.launch("*/*") }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { launcher.launch("*/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(if (archivoUri == null) "Seleccionar archivo" else "Archivo seleccionado")
             }
             Spacer(Modifier.height(8.dp))
@@ -145,9 +181,9 @@ fun RegistroCertificacion(
                             }
 
                             val resp = apiService.registrarCertificado(
-                                personaId = RequestBody.create("text/plain".toMediaType(), personaId),
-                                empresaId = RequestBody.create("text/plain".toMediaType(), empresaId),
-                                nombre = RequestBody.create("text/plain".toMediaType(), nombreCertificado),
+                                personaId = personaId.toRequestBody("text/plain".toMediaType()),
+                                empresaId = empresaId.toRequestBody("text/plain".toMediaType()),
+                                nombre = nombreCertificado.toRequestBody("text/plain".toMediaType()),
                                 archivo = multipart
                             )
 
@@ -156,8 +192,12 @@ fun RegistroCertificacion(
                                 nombreCertificado = ""
                                 archivoUri = null
                                 cargarCertificados()
-                            } else mensaje = "❌ Error al guardar: ${resp.code()}"
-                        } catch (e: Exception) { mensaje = "❌ ${e.message}" }
+                            } else {
+                                mensaje = "❌ Error al guardar: ${resp.code()}"
+                            }
+                        } catch (e: Exception) {
+                            mensaje = "❌ ${e.message}"
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

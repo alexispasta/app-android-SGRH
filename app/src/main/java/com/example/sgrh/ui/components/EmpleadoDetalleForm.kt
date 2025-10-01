@@ -1,15 +1,16 @@
 package com.example.sgrh.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.sgrh.data.remote.Empleado
 import com.example.sgrh.data.remote.RetrofitClient
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
-
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,9 +20,8 @@ fun EmpleadoDetalleForm(
 ) {
     var empleado by remember { mutableStateOf<Empleado?>(null) }
     var mensaje by remember { mutableStateOf("") }
-    val scope = rememberCoroutineScope()
 
-    // 🔹 Cargar datos del empleado al iniciar
+    // 🔹 Cargar datos del empleado
     LaunchedEffect(usuarioId) {
         try {
             val response = RetrofitClient.api.getEmpleadoById(usuarioId)
@@ -47,20 +47,12 @@ fun EmpleadoDetalleForm(
     }
 
     val emp = empleado!!
-    var nombre by remember { mutableStateOf(emp.nombre ?: "") }
-    var apellido by remember { mutableStateOf(emp.apellido ?: "") }
-    var fecha by remember { mutableStateOf(emp.fecha ?: "") }
-    var rol by remember { mutableStateOf(emp.rol ?: "") }
-    var email by remember { mutableStateOf(emp.email ?: "") }
-    var telefono by remember { mutableStateOf(emp.telefono ?: "") }
-    var direccion by remember { mutableStateOf(emp.direccion ?: "") }
-    var codigo by remember { mutableStateOf(emp.codigo ?: "") }
-    var ciudad by remember { mutableStateOf(emp.ciudad ?: "") }
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()), // ✅ scroll habilitado
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text("Información del empleado", style = MaterialTheme.typography.titleMedium)
@@ -73,59 +65,26 @@ fun EmpleadoDetalleForm(
             )
         }
 
-        OutlinedTextField(
-            value = emp._id,
-            onValueChange = {},
-            label = { Text("ID del empleado (no editable)") },
-            enabled = false,
+        // ✅ Campos solo lectura (no editables)
+        OutlinedTextField(value = emp.nombre ?: "", onValueChange = {}, label = { Text("Nombre") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.apellido ?: "", onValueChange = {}, label = { Text("Apellido") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.email ?: "", onValueChange = {}, label = { Text("Email") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.telefono ?: "", onValueChange = {}, label = { Text("Teléfono") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.direccion ?: "", onValueChange = {}, label = { Text("Dirección") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.codigo ?: "", onValueChange = {}, label = { Text("Código") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.fecha ?: "", onValueChange = {}, label = { Text("Fecha (YYYY-MM-DD)") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.rol ?: "", onValueChange = {}, label = { Text("Rol") }, enabled = false, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = emp.ciudad ?: "", onValueChange = {}, label = { Text("Ciudad") }, enabled = false, modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // ✅ Botón volver
+        Button(
+            onClick = onCerrar,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
             modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(value = nombre, onValueChange = { nombre = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = apellido, onValueChange = { apellido = it }, label = { Text("Apellido") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = telefono, onValueChange = { telefono = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = direccion, onValueChange = { direccion = it }, label = { Text("Dirección") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = codigo, onValueChange = { codigo = it }, label = { Text("Código") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = fecha, onValueChange = { fecha = it }, label = { Text("Fecha (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = rol, onValueChange = { rol = it }, label = { Text("Rol") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = ciudad, onValueChange = { ciudad = it }, label = { Text("Ciudad") }, modifier = Modifier.fillMaxWidth())
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
-                scope.launch {
-                    try {
-                        val actualizado = emp.copy(
-                            nombre = nombre,
-                            apellido = apellido,
-                            email = email,
-                            telefono = telefono,
-                            direccion = direccion,
-                            codigo = codigo,
-                            fecha = if (fecha.isBlank()) null else fecha,
-                            rol = rol,
-                            ciudad = ciudad
-                        )
-                        val response = RetrofitClient.api.actualizarEmpleado(emp._id, actualizado)
-                        if (response.isSuccessful) {
-                            mensaje = "✅ Datos actualizados correctamente"
-                            empleado = actualizado
-                        } else {
-                            mensaje = "❌ Error al actualizar: ${response.code()}"
-                        }
-                    } catch (e: Exception) {
-                        mensaje = "❌ ${e.message}"
-                    }
-                }
-            }) {
-                Text("Guardar cambios")
-            }
-
-            OutlinedButton(onClick = onCerrar) {
-                Text("Volver")
-            }
+        ) {
+            Text("← Volver", color = Color.White)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.sgrh.ui.pages.gerente
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,6 +18,9 @@ import com.example.sgrh.data.remote.Empleado as RemoteEmpleado
 import com.example.sgrh.ui.models.Empleado
 import com.example.sgrh.ui.components.RegistroCertificacion
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import androidx.compose.foundation.clickable
+
 
 // 🔹 Mapper de EmpleadoAsistencia → Empleado (UI)
 fun EmpleadoAsistencia.toUI(): Empleado = Empleado(
@@ -101,7 +105,7 @@ fun EmpleadosTablaScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("Gestión de Empleados", style = MaterialTheme.typography.headlineSmall)
+        Text("Gestión de Empleados", style = MaterialTheme.typography.headlineSmall, color = Color.Black)
         Spacer(Modifier.height(12.dp))
 
         mensaje?.let { (tipo, texto) ->
@@ -111,7 +115,7 @@ fun EmpleadosTablaScreen(
                     .fillMaxWidth()
                     .background(color)
                     .padding(8.dp)
-            ) { Text(texto) }
+            ) { Text(texto, color = Color.Black) }
             Spacer(Modifier.height(8.dp))
         }
 
@@ -119,7 +123,6 @@ fun EmpleadosTablaScreen(
             empleados.forEach { emp ->
                 Button(
                     onClick = {
-                        // 🔹 Cargar empleado completo antes de editar
                         scope.launch {
                             try {
                                 val resp = apiService.getEmpleadoById(emp._id)
@@ -142,7 +145,7 @@ fun EmpleadosTablaScreen(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                 ) {
-                    Text("${emp.nombre ?: ""} ${emp.apellido ?: ""}")
+                    Text("${emp.nombre ?: ""} ${emp.apellido ?: ""}", color = Color.White)
                 }
             }
         }
@@ -156,9 +159,10 @@ fun EmpleadosTablaScreen(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Editando: ${emp.nombre}", fontWeight = FontWeight.Bold)
+                    Text("Editando: ${emp.nombre}", fontWeight = FontWeight.Bold, color = Color.Black)
                     Spacer(Modifier.height(8.dp))
 
+                    // 🔹 Campos normales
                     val campos = listOf(
                         "Nombre" to emp.nombre,
                         "Apellido" to emp.apellido,
@@ -166,8 +170,6 @@ fun EmpleadosTablaScreen(
                         "Email" to emp.email,
                         "Teléfono" to emp.telefono,
                         "Dirección" to emp.direccion,
-                        "Rol" to emp.rol,
-                        "Fecha" to emp.fecha,
                         "Ciudad" to emp.ciudad
                     )
 
@@ -182,21 +184,83 @@ fun EmpleadosTablaScreen(
                                     "email" -> emp.copy(email = nuevo)
                                     "teléfono" -> emp.copy(telefono = nuevo)
                                     "dirección" -> emp.copy(direccion = nuevo)
-                                    "rol" -> emp.copy(rol = nuevo)
-                                    "fecha" -> emp.copy(fecha = nuevo)
                                     "ciudad" -> emp.copy(ciudad = nuevo)
                                     else -> emp
                                 }
                             },
-                            label = { Text(label) },
+                            label = { Text(label, color = Color.Black) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                                .padding(vertical = 4.dp),
+                            textStyle = LocalTextStyle.current.copy(color = Color.Black)
                         )
                     }
 
+                    // 🔹 Select de rol
+                    var expanded by remember { mutableStateOf(false) }
+                    val roles = listOf("empleado", "rrhh", "gerente", "supervisor")
+                    Box {
+                        OutlinedTextField(
+                            value = emp.rol ?: "",
+                            onValueChange = {},
+                            label = { Text("Rol", color = Color.Black) },
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            textStyle = LocalTextStyle.current.copy(color = Color.Black)
+                        )
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            roles.forEach { rol ->
+                                DropdownMenuItem(
+                                    text = { Text(rol, color = Color.Black) },
+                                    onClick = {
+                                        empleadoEditando = emp.copy(rol = rol)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                        Spacer(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .padding(8.dp)
+                                .background(Color.Transparent)
+                                .clickable { expanded = true }
+                        )
+                    }
+
+                    // 🔹 Selector de fecha
+                    val calendar = Calendar.getInstance()
+                    val datePickerDialog = DatePickerDialog(
+                        context,
+                        { _, year, month, day ->
+                            val fechaStr = "%04d-%02d-%02d".format(year, month + 1, day)
+                            empleadoEditando = emp.copy(fecha = fechaStr)
+                        },
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH)
+                    )
+
+                    OutlinedTextField(
+                        value = emp.fecha ?: "",
+                        onValueChange = {},
+                        label = { Text("Fecha de Nacimiento", color = Color.Black) },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable { datePickerDialog.show() },
+                        textStyle = LocalTextStyle.current.copy(color = Color.Black)
+                    )
+
                     Spacer(Modifier.height(12.dp))
 
+                    // 🔹 Botones de acción
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -204,8 +268,7 @@ fun EmpleadosTablaScreen(
                         Button(onClick = {
                             scope.launch {
                                 try {
-                                    val response =
-                                        apiService.actualizarEmpleado(emp._id, emp.toRemote(empresaId))
+                                    val response = apiService.actualizarEmpleado(emp._id, emp.toRemote(empresaId))
                                     if (response.isSuccessful) {
                                         mensaje = "exito" to "Empleado actualizado correctamente ✅"
                                         empleadoEditando = null
@@ -219,9 +282,9 @@ fun EmpleadosTablaScreen(
                                     mensaje = "error" to (e.message ?: "Error al guardar")
                                 }
                             }
-                        }) { Text("Guardar") }
+                        }) { Text("Guardar", color = Color.White) }
 
-                        OutlinedButton(onClick = { empleadoEditando = null }) { Text("Cancelar") }
+                        OutlinedButton(onClick = { empleadoEditando = null }) { Text("Cancelar", color = Color.Black) }
                     }
 
                     Spacer(Modifier.height(12.dp))
@@ -244,7 +307,7 @@ fun EmpleadosTablaScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Eliminar Empleado") }
+                    ) { Text("Eliminar Empleado", color = Color.White) }
 
                     Spacer(Modifier.height(8.dp))
 
@@ -256,7 +319,7 @@ fun EmpleadosTablaScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Gestionar Certificados") }
+                    ) { Text("Gestionar Certificados", color = Color.White) }
                 }
             }
         }
@@ -267,6 +330,6 @@ fun EmpleadosTablaScreen(
             onClick = onVolver,
             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
             modifier = Modifier.fillMaxWidth()
-        ) { Text("← Volver al menú") }
+        ) { Text("← Volver al menú", color = Color.White) }
     }
 }

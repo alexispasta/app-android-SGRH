@@ -13,11 +13,7 @@ import com.example.sgrh.data.remote.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun GestionNominaScreen(
-    onVolver: () -> Unit,
-    empresaId: String,
-    apiService: ApiService = RetrofitClient.api // 👈 por defecto usa Retrofit real
-) {
+fun GestionNominaScreen(onVolver: () -> Unit, empresaId: String) {
     var empleados by remember { mutableStateOf(listOf<EmpleadoNomina>()) }
     var nominas by remember { mutableStateOf(listOf<Nomina>()) }
     var datosNomina by remember { mutableStateOf<Nomina?>(null) }
@@ -25,13 +21,14 @@ fun GestionNominaScreen(
     var mostrarModal by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+    val api = RetrofitClient.api
 
     // Cargar empleados y nóminas al iniciar
     LaunchedEffect(empresaId) {
         scope.launch {
             try {
-                val resEmp = apiService.getEmpleados(empresaId)
-                val resNom = apiService.getNominas(empresaId)
+                val resEmp = api.getEmpleados(empresaId)
+                val resNom = api.getNominas(empresaId)
 
                 if (resEmp.isSuccessful && resNom.isSuccessful) {
                     val empleadosResp = resEmp.body() ?: emptyList<EmpleadoAsistencia>()
@@ -88,14 +85,11 @@ fun GestionNominaScreen(
                     empresaId = nomina.empresaId
                 )
 
-                val response = if (payload._id != null) {
-                    apiService.actualizarNomina(payload._id!!, payload)
-                } else {
-                    apiService.crearNomina(payload)
-                }
+                val response = if (payload._id != null) api.actualizarNomina(payload._id!!, payload)
+                else api.crearNomina(payload)
 
                 if (response.isSuccessful) {
-                    val resNom = apiService.getNominas(empresaId)
+                    val resNom = api.getNominas(empresaId)
                     if (resNom.isSuccessful) nominas = resNom.body() ?: emptyList()
                     datosNomina = null
                     mostrarModal = true
@@ -168,10 +162,7 @@ fun GestionNominaScreen(
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Button(onClick = { guardarCambiosNomina() }) { Text("Guardar Cambios") }
-                Button(onClick = { datosNomina = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
-                    Text("Cancelar")
-                }
+                Button(onClick = { datosNomina = null }, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) { Text("Cancelar") }
             }
         }
 
